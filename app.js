@@ -1097,8 +1097,21 @@ const SUPABASE_URL = 'https://kgdewraoanlaqewpbdlo.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtnZGV3cmFvYW5sYXFld3BiZGxvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM3MTg3NDksImV4cCI6MjA2OTI5NDc0OX0.wBgDDHcdK0Q9mN6uEPQFEO8gXiJdnrntLJW3dUdh89M';
 
 // Initialize Supabase client
-const { createClient } = supabase;
-const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+let supabaseClient;
+try {
+    if (window.supabase && window.supabase.createClient) {
+        supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    } else {
+        console.warn('Supabase not available, using offline mode');
+        supabaseClient = null;
+    }
+} catch (error) {
+    console.error('Error initializing Supabase:', error);
+    supabaseClient = null;
+}
+
+// Make supabaseClient available globally
+window.supabaseClient = supabaseClient;
 
 // Application Data
 let appData = {
@@ -1233,9 +1246,19 @@ document.addEventListener('DOMContentLoaded', function() {
 
 async function initializeApp() {
     try {
+        console.log('🚀 Starting app initialization...');
         showLoadingState(true);
         addLogoutButton();
-        await loadDataFromSupabase();
+        
+        // Try to load from Supabase, but have fallback
+        try {
+            await loadDataFromSupabase();
+            console.log('✅ Data loaded from Supabase');
+        } catch (error) {
+            console.warn('⚠️ Supabase loading failed, using emergency init:', error);
+            addSampleDataIfEmpty();
+        }
+        
         appData.dataLoaded = true;
 
         setupNavigation();
@@ -2679,13 +2702,8 @@ function setupNavigation() {
     }
     
     console.log('Enhanced navigation setup complete');
-}
-    // Set initial active state based on URL hash or default to dashboard
-    const hash = window.location.hash.slice(1) || 'dashboard';
-    const initialLink = document.querySelector(`[data-page="${hash}"]`);
-    if (initialLink) {
-        initialLink.click();
-    }
+    
+    console.log('Enhanced navigation setup complete');
 }
 
 // Helper function to initialize expense module on demand
@@ -2880,6 +2898,11 @@ function updateDashboardMetrics() {
 
     // Calculate additional metrics
     const pendingInvoices = appData.invoices.filter(inv => inv.status === 'Pending').length;
+    console.log('Debugging pending count:', {
+        totalInvoices: appData.invoices.length,
+        pendingInvoices,
+        allStatuses: appData.invoices.map(inv => ({ id: inv.id, status: inv.status }))
+    });
     const overdueInvoices = appData.invoices.filter(inv => {
         const dueDate = new Date(inv.dueDate);
         const today = new Date();
@@ -3557,7 +3580,6 @@ function renderCharts(period = 'monthly') {
             }, index * 300);
         });
     }, 500);
-}
 
 // Helper function to animate number changes
 function animateNumberChange(element, targetValue, prefix = '') {
@@ -3627,12 +3649,66 @@ function setupAnalyticsFilters() {
 function renderInvoices() {
     console.log('Rendering invoices...');
     cleanupExpenseFilters();
-    // Clear dynamic content
+    
     const invoicesPage = document.getElementById('invoices-page');
-    if (invoicesPage) {
-        const tbody = invoicesPage.querySelector('#invoices-body');
-        if (tbody) tbody.innerHTML = '';
-    }
+    if (!invoicesPage) return;
+    
+    // Create the full invoices page structure
+    invoicesPage.innerHTML = `
+        <div class="page-header">
+            <div>
+                <h1>📄 Invoices</h1>
+                <p style="color: var(--text-muted); margin: 8px 0 0 0; font-size: 14px;">
+                    Manage and track all your invoices
+                </p>
+            </div>
+            <div class="header-actions">
+                <button class="btn btn--secondary btn--sm" id="export-invoices-btn">📊 Export</button>
+                <button class="btn btn--primary" id="create-invoice-btn">+ Create Invoice</button>
+            </div>
+        </div>
+        
+        <!-- Summary Cards -->
+        <div class="metrics-grid" style="margin-bottom: 24px;">
+            <div class="metric-card">
+                <div class="metric-value" id="total-invoices-value">${appData.invoices.length}</div>
+                <div class="metric-label">Total Invoices</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value" id="total-revenue-value">₹${formatNumber(appData.invoices.reduce((sum, inv) => sum + inv.amount, 0))}</div>
+                <div class="metric-label">Total Revenue</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value" id="pending-invoices-value">${appData.invoices.filter(inv => inv.status === 'Pending').length}</div>
+                <div class="metric-label">Pending</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value" id="paid-invoices-value">${appData.invoices.filter(inv => inv.status === 'Paid').length}</div>
+                <div class="metric-label">Paid</div>
+            </div>
+        </div>
+        
+        <!-- Invoices Table -->
+        <div class="table-container">
+            <table class="invoices-table">
+                <thead>
+                    <tr>
+                        <th>Invoice #</th>
+                        <th>Client</th>
+                        <th>Amount</th>
+                        <th>Date</th>
+                        <th>Due Date</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="invoices-body">
+                    <!-- Will be populated below -->
+                </tbody>
+            </table>
+        </div>
+    `;
+    
     const tbody = document.getElementById('invoices-body');
     if (!tbody) return;
 
@@ -3725,6 +3801,18 @@ function renderInvoices() {
         </tr>
     `).join('');
 
+    // Setup event listeners for the create invoice button
+    const createInvoiceBtn = document.getElementById('create-invoice-btn');
+    if (createInvoiceBtn) {
+        createInvoiceBtn.addEventListener('click', () => {
+            if (typeof showInvoiceModal === 'function') {
+                showInvoiceModal();
+            } else {
+                console.warn('showInvoiceModal function not found');
+            }
+        });
+    }
+
     const filterTabs = document.querySelectorAll('.filter-tab');
     filterTabs.forEach(tab => {
         tab.removeEventListener('click', handleFilterClick);
@@ -3761,12 +3849,51 @@ function filterInvoices(filter) {
 function renderClients() {
     console.log('Rendering clients...');
     cleanupExpenseFilters();
-    // Clear dynamic content
+    
     const clientsPage = document.getElementById('clients-page');
-    if (clientsPage) {
-        const grid = clientsPage.querySelector('#clients-grid');
-        if (grid) grid.innerHTML = '';
-    }
+    if (!clientsPage) return;
+    
+    // Create the full clients page structure
+    clientsPage.innerHTML = `
+        <div class="page-header">
+            <div>
+                <h1>👥 Clients</h1>
+                <p style="color: var(--text-muted); margin: 8px 0 0 0; font-size: 14px;">
+                    Manage your client relationships
+                </p>
+            </div>
+            <div class="header-actions">
+                <button class="btn btn--secondary btn--sm" id="export-clients-btn">📊 Export</button>
+                <button class="btn btn--primary" id="add-client-btn">+ Add Client</button>
+            </div>
+        </div>
+        
+        <!-- Summary Cards -->
+        <div class="metrics-grid" style="margin-bottom: 24px;">
+            <div class="metric-card">
+                <div class="metric-value" id="total-clients-value">${appData.clients.length}</div>
+                <div class="metric-label">Total Clients</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value" id="active-clients-value">${appData.clients.filter(client => client.status === 'active').length}</div>
+                <div class="metric-label">Active Clients</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value" id="total-client-revenue-value">₹${formatNumber(appData.clients.reduce((sum, client) => sum + (client.totalPaid || 0), 0))}</div>
+                <div class="metric-label">Total Revenue</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value" id="avg-client-value">₹${formatNumber(appData.clients.length > 0 ? appData.clients.reduce((sum, client) => sum + (client.totalPaid || 0), 0) / appData.clients.length : 0)}</div>
+                <div class="metric-label">Average Value</div>
+            </div>
+        </div>
+        
+        <!-- Clients Grid -->
+        <div id="clients-grid" class="clients-grid">
+            <!-- Will be populated below -->
+        </div>
+    `;
+    
     const grid = document.getElementById('clients-grid');
     if (!grid || !appData.dataLoaded) {
         console.log('Grid not found or data not loaded');
@@ -4142,14 +4269,23 @@ async function deleteClient(clientId, clientName) {
 function renderAnalytics(period = 'monthly') {
     console.log('Rendering analytics...');
     cleanupExpenseFilters();
+    
     // Clear dynamic content
     const analyticsPage = document.getElementById('analytics-page');
     if (analyticsPage) {
+        // Remove loading placeholder
+        const loadingPlaceholder = analyticsPage.querySelector('.loading-placeholder');
+        if (loadingPlaceholder) loadingPlaceholder.remove();
+        
         // Remove old analytics layout
         const oldLayout = analyticsPage.querySelector('#modern-analytics-layout');
         if (oldLayout) oldLayout.remove();
+        
         // Destroy analytics chart if exists
-        if (window.analyticsChart && typeof window.analyticsChart.destroy === 'function') { window.analyticsChart.destroy(); window.analyticsChart = null; }
+        if (window.analyticsChart && typeof window.analyticsChart.destroy === 'function') { 
+            window.analyticsChart.destroy(); 
+            window.analyticsChart = null; 
+        }
     }
     if (analyticsPage && !document.getElementById('modern-analytics-layout')) {
         const analyticsLayout = document.createElement('div');
@@ -4454,10 +4590,121 @@ function renderSettings() {
     console.log('Rendering settings...');
     cleanupExpenseFilters();
 
+    const settingsPage = document.getElementById('settings-page');
+    if (!settingsPage) return;
+
     if (!appData.dataLoaded) {
         console.log('Data not loaded yet, skipping settings render');
+        settingsPage.innerHTML = `
+            <div class="loading-placeholder" style="text-align: center; padding: 50px; color: var(--text-muted);">
+                <div style="font-size: 24px; margin-bottom: 16px;">⚙️</div>
+                <h3>Loading Settings...</h3>
+                <p>Please wait while we load your settings</p>
+            </div>
+        `;
         return;
     }
+
+    // Create the full settings page structure
+    settingsPage.innerHTML = `
+        <div class="page-header">
+            <div>
+                <h1>⚙️ Settings</h1>
+                <p style="color: var(--text-muted); margin: 8px 0 0 0; font-size: 14px;">
+                    Configure your application preferences
+                </p>
+            </div>
+            <div class="header-actions">
+                <button class="btn btn--secondary btn--sm" id="export-settings-btn">📊 Export</button>
+                <button class="btn btn--primary" id="save-settings-btn">💾 Save Settings</button>
+            </div>
+        </div>
+        
+        <!-- Settings Form -->
+        <div class="settings-container">
+            <div class="settings-section">
+                <h3>Profile Information</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="profile-name">Name</label>
+                        <input type="text" id="profile-name" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label for="profile-email">Email</label>
+                        <input type="email" id="profile-email" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label for="profile-phone">Phone</label>
+                        <input type="tel" id="profile-phone" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label for="profile-address">Address</label>
+                        <textarea id="profile-address" class="form-control" rows="3"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="profile-gstin">GSTIN</label>
+                        <input type="text" id="profile-gstin" class="form-control">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="settings-section">
+                <h3>Banking Information</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="bank-account-name">Account Holder Name</label>
+                        <input type="text" id="bank-account-name" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label for="bank-name">Bank Name</label>
+                        <input type="text" id="bank-name" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label for="account-type">Account Type</label>
+                        <input type="text" id="account-type" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label for="bank-account">Account Number</label>
+                        <input type="text" id="bank-account" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label for="bank-branch">Branch</label>
+                        <input type="text" id="bank-branch" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label for="bank-ifsc">IFSC Code</label>
+                        <input type="text" id="bank-ifsc" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label for="bank-swift">SWIFT Code</label>
+                        <input type="text" id="bank-swift" class="form-control">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="settings-section">
+                <h3>Application Settings</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="currency-setting">Currency</label>
+                        <select id="currency-setting" class="form-control">
+                            <option value="INR">Indian Rupee (₹)</option>
+                            <option value="USD">US Dollar ($)</option>
+                            <option value="EUR">Euro (€)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="tax-rate">Tax Rate (%)</label>
+                        <input type="number" id="tax-rate" class="form-control" min="0" max="100" step="0.01">
+                    </div>
+                    <div class="form-group">
+                        <label for="invoice-prefix">Invoice Prefix</label>
+                        <input type="text" id="invoice-prefix" class="form-control">
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
 
     const settings = appData.settings;
 
@@ -4573,19 +4820,218 @@ function setupModals() {
 async function openInvoiceModal(invoiceId = null) {
     console.log('Opening enhanced invoice modal...', invoiceId ? 'for editing' : 'for creation');
     const modal = document.getElementById('invoice-modal');
-    if (modal) {
-        // Add modern modal entrance animation
-        modal.classList.remove('hidden');
-        modal.classList.add('modal-entrance');
+    if (!modal) {
+        console.error('Invoice modal not found');
+        showToast('Modal container not found', 'error');
+        return;
+    }
+
+    // Ensure data is loaded
+    if (!appData.dataLoaded) {
+        showToast('Data is still loading. Please wait.', 'info');
+        return;
+    }
+
+    // Build clients options safely
+    let clientsOptions = '<option value="">Select Client</option>';
+    if (appData.clients && appData.clients.length > 0) {
+        clientsOptions += appData.clients.map(client => 
+            `<option value="${client.id}">${client.name}</option>`
+        ).join('');
+    }
+
+    // Initialize modal content
+    modal.innerHTML = `
+        <div class="modal-overlay" onclick="closeModal(this.closest('.modal'))"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="invoice-modal-title">Create New Invoice</h2>
+                <button class="modal-close" onclick="closeModal(this.closest('.modal'))">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="invoice-form">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="invoice-number">Invoice Number</label>
+                            <input type="text" id="invoice-number" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="issue-date">Issue Date</label>
+                            <input type="date" id="issue-date" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="due-date">Due Date</label>
+                            <input type="date" id="due-date" class="form-control" required>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="invoice-client">Client</label>
+                        <select id="invoice-client" class="form-control" required>
+                            ${clientsOptions}
+                        </select>
+                    </div>
+                    
+                    <div class="line-items-section">
+                        <div class="section-header">
+                            <h3>Line Items</h3>
+                            <button type="button" class="btn btn--secondary btn--sm" onclick="addLineItem()">+ Add Item</button>
+                        </div>
+                        <div id="line-items-container">
+                            <!-- Line items will be added here -->
+                        </div>
+                    </div>
+                    
+                    <div class="invoice-totals">
+                        <div class="totals-row">
+                            <span>Subtotal:</span>
+                            <span id="subtotal">₹0.00</span>
+                        </div>
+                        <div class="totals-row">
+                            <span>Tax (${appData.settings.taxRate || 0}%):</span>
+                            <span id="tax-amount">₹0.00</span>
+                        </div>
+                        <div class="totals-row total">
+                            <span>Total:</span>
+                            <span id="total-amount">₹0.00</span>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn--secondary" onclick="closeModal(this.closest('.modal'))">Cancel</button>
+                <button type="button" class="btn btn--primary" id="save-invoice">Save Invoice</button>
+            </div>
+        </div>
+    `;
+
+    // Add modern modal entrance animation
+    modal.classList.remove('hidden');
+    modal.classList.add('modal-entrance');
+    
+    // Remove animation class after animation completes
+    setTimeout(() => {
+        modal.classList.remove('modal-entrance');
+    }, 300);
+
+    editingInvoiceId = invoiceId;
+
+    if (invoiceId) {
+        // EDITING EXISTING INVOICE
+        const invoice = appData.invoices.find(inv => inv.id === invoiceId);
+        if (invoice) {
+            console.log('Populating form for editing invoice:', invoice);
+            
+            // Update modal title
+            const modalTitle = document.getElementById('invoice-modal-title');
+            if (modalTitle) {
+                modalTitle.textContent = `Edit Invoice - ${invoice.id}`;
+            }
+
+            // Populate form fields
+            const invoiceNumInput = document.getElementById('invoice-number');
+            if (invoiceNumInput) {
+                invoiceNumInput.value = invoice.id;
+            }
+            
+            const issueDateField = document.getElementById('issue-date');
+            const dueDateField = document.getElementById('due-date');
+            
+            if (issueDateField) {
+                issueDateField.value = invoice.date;
+            }
+            if (dueDateField) {
+                dueDateField.value = invoice.dueDate;
+            }
+
+            const clientSelect = document.getElementById('invoice-client');
+            if (clientSelect) {
+                clientSelect.value = invoice.clientId;
+            }
+
+            // Populate line items
+            const container = document.getElementById('line-items-container');
+            if (container) {
+                container.innerHTML = '';
+                if (invoice.items && invoice.items.length > 0) {
+                    invoice.items.forEach((item) => {
+                        addLineItem(item);
+                    });
+                } else {
+                    addLineItem();
+                }
+            }
+
+            // Update save button
+            const saveBtn = document.getElementById('save-invoice');
+            if (saveBtn) {
+                saveBtn.textContent = 'Update Invoice';
+                saveBtn.onclick = () => saveInvoice(true);
+            }
+        }
+    } else {
+        // CREATING NEW INVOICE
+        console.log('Setting up form for new invoice');
         
-        // Remove animation class after animation completes
-        setTimeout(() => {
-            modal.classList.remove('modal-entrance');
-        }, 300);
+        // Clear form
+        const form = document.getElementById('invoice-form');
+        if (form) {
+            form.reset();
+        }
 
-        editingInvoiceId = invoiceId;
+        // Add one line item
+        const container = document.getElementById('line-items-container');
+        if (container) {
+            container.innerHTML = '';
+            addLineItem();
+        }
 
-        if (invoiceId) {
+        // Set default dates
+        const today = new Date().toISOString().split('T')[0];
+        const nextMonth = new Date();
+        nextMonth.setMonth(nextMonth.getMonth() + 1);
+        const dueDate = nextMonth.toISOString().split('T')[0];
+
+        const issueDateField = document.getElementById('issue-date');
+        const dueDateField = document.getElementById('due-date');
+        
+        if (issueDateField) issueDateField.value = today;
+        if (dueDateField) dueDateField.value = dueDate;
+
+        // Generate invoice number
+        const invoiceNumInput = document.getElementById('invoice-number');
+        if (invoiceNumInput) {
+            const nextNumber = appData.invoices.length + 1;
+            invoiceNumInput.value = `${appData.settings.invoicePrefix}-${nextNumber.toString().padStart(3, '0')}`;
+        }
+
+        // Set save button
+        const saveBtn = document.getElementById('save-invoice');
+        if (saveBtn) {
+            saveBtn.textContent = 'Save Invoice';
+            saveBtn.onclick = () => saveInvoice(false);
+        }
+    }
+
+    // Calculate totals after a brief delay to ensure DOM is ready
+    setTimeout(() => {
+        if (typeof calculateInvoiceTotal === 'function') {
+            calculateInvoiceTotal();
+        }
+    }, 200);
+
+    // Add modern modal entrance animation
+    modal.classList.remove('hidden');
+    modal.classList.add('modal-entrance');
+    
+    // Remove animation class after animation completes
+    setTimeout(() => {
+        modal.classList.remove('modal-entrance');
+    }, 300);
+
+    editingInvoiceId = invoiceId;
+
+    if (invoiceId) {
             // EDITING EXISTING INVOICE
             const invoice = appData.invoices.find(inv => inv.id === invoiceId);
             if (invoice) {
@@ -4737,21 +5183,38 @@ async function openInvoiceModal(invoiceId = null) {
             }
         } else {
             // CREATING NEW INVOICE
-            try {
-                const num = await getNextInvoiceNumber();
-                const invoiceNumInput = document.getElementById('invoice-number');
-                if (invoiceNumInput) {
-                    invoiceNumInput.value = `${appData.settings.invoicePrefix}-${String(num).padStart(3, '0')}`;
-                    invoiceNumInput.removeAttribute('readonly');
-                    invoiceNumInput.classList.add('field-generated');
-                }
-            } catch (error) {
-                console.error('Error generating invoice number:', error);
-                const invoiceNumInput = document.getElementById('invoice-number');
-                if (invoiceNumInput) {
-                    invoiceNumInput.value = `${appData.settings.invoicePrefix}-${String(Date.now()).slice(-3)}`;
-                    invoiceNumInput.removeAttribute('readonly');
-                }
+            console.log('Setting up form for new invoice');
+            
+            // Clear form
+            const form = document.getElementById('invoice-form');
+            if (form) {
+                form.reset();
+            }
+
+            // Add one line item
+            const container = document.getElementById('line-items-container');
+            if (container) {
+                container.innerHTML = '';
+                addLineItem();
+            }
+
+            // Set default dates
+            const today = new Date().toISOString().split('T')[0];
+            const nextMonth = new Date();
+            nextMonth.setMonth(nextMonth.getMonth() + 1);
+            const dueDate = nextMonth.toISOString().split('T')[0];
+
+            const issueDateField = document.getElementById('issue-date');
+            const dueDateField = document.getElementById('due-date');
+            
+            if (issueDateField) issueDateField.value = today;
+            if (dueDateField) dueDateField.value = dueDate;
+
+            // Generate invoice number
+            const invoiceNumInput = document.getElementById('invoice-number');
+            if (invoiceNumInput) {
+                const nextNumber = appData.invoices.length + 1;
+                invoiceNumInput.value = `${appData.settings.invoicePrefix}-${nextNumber.toString().padStart(3, '0')}`;
             }
 
             // Update modal title for creation
@@ -4766,19 +5229,13 @@ async function openInvoiceModal(invoiceId = null) {
                 `;
             }
 
-            const today = new Date().toISOString().split('T')[0];
-            const dueDate = new Date();
-            dueDate.setDate(dueDate.getDate() + 30);
-
-            const issueDateField = document.getElementById('issue-date');
-            const dueDateField = document.getElementById('due-date');
-
+            // Set default dates (avoiding redeclaration)
             if (issueDateField) {
                 issueDateField.value = today;
                 issueDateField.classList.add('field-auto-filled');
             }
             if (dueDateField) {
-                dueDateField.value = dueDate.toISOString().split('T')[0];
+                dueDateField.value = dueDate;
                 dueDateField.classList.add('field-auto-filled');
             }
 
@@ -4788,9 +5245,11 @@ async function openInvoiceModal(invoiceId = null) {
                     appData.clients.map(client => `<option value="${client.id}">${client.name}</option>`).join('');
             }
 
-            const container = document.getElementById('line-items-container');
-            container.innerHTML = '';
-            addLineItem();
+            // Clear and add line item (avoiding redeclaration)
+            if (container) {
+                container.innerHTML = '';
+                addLineItem();
+            }
 
             // Reset modal footer for creation
             const modalFooter = document.querySelector('#invoice-modal .modal-footer');
@@ -4836,11 +5295,10 @@ async function openInvoiceModal(invoiceId = null) {
                             });
                         });
                     }
-                }, 100);
-            }
-        }
-    }
-}
+                }, 200);
+            } // close if (modalFooter)
+        } // close else (creating new invoice)
+} // End of openInvoiceModal function
 
 function openClientModal() {
     console.log('Opening enhanced client modal...');
@@ -5156,15 +5614,16 @@ function calculateInvoiceTotal() {
     const tax = subtotal * taxRate;
     const total = subtotal + tax;
 
-    const subtotalElement = document.getElementById('invoice-subtotal');
-    const taxElement = document.getElementById('invoice-tax');
-    const totalElement = document.getElementById('invoice-total');
+    // Try both modal and regular page IDs
+    const subtotalElement = document.getElementById('subtotal') || document.getElementById('invoice-subtotal');
+    const taxElement = document.getElementById('tax-amount') || document.getElementById('invoice-tax');
+    const totalElement = document.getElementById('total-amount') || document.getElementById('invoice-total');
 
     if (subtotalElement) subtotalElement.textContent = `₹${formatNumber(subtotal)}`;
     if (taxElement) taxElement.textContent = `₹${formatNumber(tax)}`;
     if (totalElement) totalElement.textContent = `₹${formatNumber(total)}`;
 
-    // Update tax label
+    // Update tax label (try both IDs)
     const taxLabel = document.getElementById('invoice-tax-label');
     if (taxLabel) {
         taxLabel.textContent = `Tax (${appData.settings.taxRate}%):`;
@@ -5327,12 +5786,14 @@ async function changeInvoiceStatus(invoiceId, newStatus) {
             calculateMonthlyEarnings();
 
             // Update client totals
-            const client = appData.clients.find(c => c.id === invoice.clientId);
-            if (client) {
-                const clientInvoices = appData.invoices.filter(inv => inv.clientId === invoice.clientId);
-                client.total_amount = clientInvoices
-                    .filter(inv => inv.status === 'Paid')
-                    .reduce((sum, inv) => sum + inv.amount, 0);
+            if (invoice && invoice.clientId) {
+                const client = appData.clients.find(c => c.id === invoice.clientId);
+                if (client) {
+                    const clientInvoices = appData.invoices.filter(inv => inv.clientId === invoice.clientId);
+                    client.total_amount = clientInvoices
+                        .filter(inv => inv.status === 'Paid')
+                        .reduce((sum, inv) => sum + inv.amount, 0);
+                }
             }
         }
 
@@ -5709,6 +6170,10 @@ function viewInvoice(invoiceId) {
 
 // ENHANCED: Invoice modal with GSTIN and download button
 function showInvoiceModal(invoice) {
+    if (!invoice || !invoice.clientId) {
+        showToast('Invalid invoice data', 'error');
+        return;
+    }
     const client = appData.clients.find(c => c.id === invoice.clientId);
     const settings = appData.settings;
 
@@ -5901,6 +6366,11 @@ async function downloadInvoice(invoiceId) {
     const invoice = appData.invoices.find(inv => inv.id === invoiceId);
     if (!invoice) {
         showToast('Invoice not found', 'error');
+        return;
+    }
+
+    if (!invoice.clientId) {
+        showToast('Invoice missing client information', 'error');
         return;
     }
 
@@ -6229,7 +6699,7 @@ function removeToast(toast) {
 }
 
 // ENHANCED: Line item functions with modern styling
-function addLineItem() {
+function addLineItem(existingItem = null) {
     const container = document.getElementById('line-items-container');
     if (container) {
         const itemCount = container.children.length;
@@ -6248,19 +6718,19 @@ function addLineItem() {
             </div>
             <div class="form-row">
                 <div class="form-group flex-2">
-                    <input type="text" class="form-control modern" placeholder="Description" required>
+                    <input type="text" class="form-control modern description" placeholder="Description" value="${existingItem ? existingItem.description || '' : ''}" required>
                     <label class="floating-label">Description</label>
                 </div>
                 <div class="form-group">
-                    <input type="number" class="form-control modern quantity" placeholder="1" min="1" value="1" required>
+                    <input type="number" class="form-control modern quantity" placeholder="1" min="1" value="${existingItem ? existingItem.quantity || 1 : 1}" required>
                     <label class="floating-label">Qty</label>
                 </div>
                 <div class="form-group">
-                    <input type="number" class="form-control modern rate" placeholder="0.00" min="0" step="0.01" required>
+                    <input type="number" class="form-control modern rate" placeholder="0.00" min="0" step="0.01" value="${existingItem ? existingItem.rate || 0 : ''}" required>
                     <label class="floating-label">Rate</label>
                 </div>
                 <div class="form-group">
-                    <input type="number" class="form-control modern amount" placeholder="0.00" readonly>
+                    <input type="number" class="form-control modern amount" placeholder="0.00" value="${existingItem ? existingItem.amount || 0 : 0}" readonly>
                     <label class="floating-label">Amount</label>
                 </div>
             </div>
@@ -6275,6 +6745,14 @@ function addLineItem() {
         
         // Update line item numbers
         updateLineItemNumbers();
+        
+        // Trigger calculation for existing data
+        if (existingItem && existingItem.quantity && existingItem.rate) {
+            setTimeout(() => {
+                calculateLineItem(lineItem);
+                calculateInvoiceTotal();
+            }, 100);
+        }
         
         console.log('Enhanced line item added');
     }
@@ -6391,7 +6869,8 @@ function formatCurrency(amount, currency = 'INR') {
     return formatted.replace('₹', '₹').replace('$', '$');
 }
 
-// ENHANCED: Animation utilities
+// ENHANCED: Animation utilities (DUPLICATE - COMMENTED OUT)
+/*
 const animationUtils = {
     fadeIn: (element, duration = 300) => {
         element.style.opacity = '0';
@@ -6436,6 +6915,7 @@ const animationUtils = {
         }, 800);
     }
 };
+*/
 
 // ENHANCED: Modern search functionality
 function createSearchInput(placeholder = 'Search...', onSearch) {
@@ -6656,8 +7136,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Log performance
     setTimeout(() => {
-        performanceMonitor.logTiming('Full app initialization');
-        performanceMonitor.logMemory();
+        console.log('✅ Full app initialization completed');
+        console.log('📊 Memory usage:', performance.memory ? Math.round(performance.memory.usedJSHeapSize / 1024 / 1024) + 'MB' : 'N/A');
     }, 1000);
 });
 
@@ -6736,3 +7216,142 @@ if (window.location.hostname === 'localhost' || window.location.hostname.include
 // - Client portal for invoice viewing
 // - Integration with accounting software
 // - Mobile responsive improvements
+
+// ========================================
+// FALLBACK DATA AND EMERGENCY INITIALIZATION
+// ========================================
+
+// Add sample data if no real data is available
+function addSampleDataIfEmpty() {
+    console.log('Adding sample data if needed...');
+    
+    if (appData.clients.length === 0) {
+        appData.clients = [
+            {
+                id: 'sample-client-1',
+                name: 'Tech Solutions Ltd',
+                email: 'contact@techsolutions.com',
+                phone: '+91 9876543210',
+                company: 'Tech Solutions Ltd',
+                total_amount: 125000,
+                total_invoices: 3
+            },
+            {
+                id: 'sample-client-2',
+                name: 'Digital Marketing Pro',
+                email: 'hello@digitalmarketing.com',
+                phone: '+91 9876543211',
+                company: 'Digital Marketing Pro',
+                total_amount: 89000,
+                total_invoices: 2
+            },
+            {
+                id: 'sample-client-3',
+                name: 'E-commerce Experts',
+                email: 'info@ecommerceexperts.com',
+                phone: '+91 9876543212',
+                company: 'E-commerce Experts',
+                total_amount: 156000,
+                total_invoices: 4
+            }
+        ];
+        appData.totalClients = appData.clients.length;
+    }
+    
+    if (appData.invoices.length === 0) {
+        appData.invoices = [
+            {
+                id: 'HP-2526-001',
+                client: 'Tech Solutions Ltd',
+                clientId: 'sample-client-1',
+                amount: 45000,
+                date: '2025-08-01',
+                dueDate: '2025-08-31',
+                status: 'Paid',
+                items: [
+                    { description: 'Website Development', quantity: 1, rate: 35000, amount: 35000 },
+                    { description: 'SEO Optimization', quantity: 1, rate: 10000, amount: 10000 }
+                ]
+            },
+            {
+                id: 'HP-2526-002',
+                client: 'Digital Marketing Pro',
+                clientId: 'sample-client-2',
+                amount: 35000,
+                date: '2025-08-05',
+                dueDate: '2025-09-05',
+                status: 'Pending',
+                items: [
+                    { description: 'Social Media Strategy', quantity: 1, rate: 25000, amount: 25000 },
+                    { description: 'Content Creation', quantity: 1, rate: 10000, amount: 10000 }
+                ]
+            },
+            {
+                id: 'HP-2526-003',
+                client: 'E-commerce Experts',
+                clientId: 'sample-client-3',
+                amount: 67000,
+                date: '2025-08-10',
+                dueDate: '2025-09-10',
+                status: 'Draft',
+                items: [
+                    { description: 'E-commerce Platform Setup', quantity: 1, rate: 50000, amount: 50000 },
+                    { description: 'Payment Gateway Integration', quantity: 1, rate: 17000, amount: 17000 }
+                ]
+            }
+        ];
+        appData.totalInvoices = appData.invoices.length;
+    }
+    
+    // Calculate totals
+    appData.totalEarnings = appData.invoices
+        .filter(inv => inv.status === 'Paid')
+        .reduce((sum, inv) => sum + inv.amount, 0);
+    
+    console.log('Sample data added:', {
+        clients: appData.clients.length,
+        invoices: appData.invoices.length,
+        earnings: appData.totalEarnings
+    });
+}
+
+// Emergency initialization if main init fails
+function emergencyInit() {
+    console.log('🚨 Running emergency initialization...');
+    
+    try {
+        addSampleDataIfEmpty();
+        setupNavigation();
+        renderDashboard();
+        
+        showToast('App loaded with sample data. Database connection may be limited.', 'warning');
+    } catch (error) {
+        console.error('Emergency init failed:', error);
+        document.body.innerHTML = `
+            <div style="display: flex; align-items: center; justify-content: center; height: 100vh; background: #f8fafc;">
+                <div style="text-align: center; max-width: 500px; padding: 40px;">
+                    <h1 style="color: #ef4444; margin-bottom: 20px;">⚠️ App Error</h1>
+                    <p style="color: #64748b; margin-bottom: 30px;">The application failed to initialize. Please refresh the page or check the console for errors.</p>
+                    <button onclick="window.location.reload()" style="background: #3b82f6; color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer;">Refresh Page</button>
+                </div>
+            </div>
+        `;
+    }
+}
+
+// Add error handling for initialization
+window.addEventListener('error', (event) => {
+    console.error('Global error caught:', event.error);
+    if (!appData.dataLoaded) {
+        console.log('App not loaded yet, running emergency init...');
+        setTimeout(emergencyInit, 1000);
+    }
+});
+
+// Ensure app initializes even if DOMContentLoaded already fired
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeApp);
+} else {
+    console.log('DOM already loaded, initializing immediately');
+    setTimeout(initializeApp, 100);
+}

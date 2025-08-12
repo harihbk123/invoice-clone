@@ -14,16 +14,6 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
-    <!-- PDF Generation -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
-
-    <!-- Date Picker -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-    <link rel="stylesheet" href="https://npmcdn.com/flatpickr/dist/plugins/monthSelect/style.css">
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-    <script src="https://npmcdn.com/flatpickr/dist/plugins/monthSelect/index.js"></script>
-    
     <!-- Enhanced Stylesheet -->
     <link rel="stylesheet" href="style.css">
     
@@ -101,10 +91,7 @@
 
         <!-- Main Content Area -->
         <main class="main-content">
-            <!-- Expenses Page -->
-            <div id="expenses-page" class="page"></div>
-            
-            <!-- Enhanced Dashboard Page -->
+            <!-- Dashboard Page -->
             <div id="dashboard-page" class="page active">
                 <div class="page-header">
                     <div>
@@ -203,34 +190,11 @@
                         <div style="position: relative; height: 300px; background: linear-gradient(180deg, rgba(94, 114, 228, 0.02) 0%, transparent 100%); border-radius: 12px; padding: 24px;">
                             <canvas id="monthlyChart"></canvas>
                         </div>
-                        <div style="display: flex; justify-content: space-around; padding: 20px; background: linear-gradient(135deg, var(--bg-tertiary) 0%, #EFF2F7 100%); border-radius: 12px; margin-top: 20px;">
-                            <div style="text-align: center;">
-                                <div style="font-size: 24px; font-weight: 700; color: var(--text-primary); margin-bottom: 4px;">₹2.8L</div>
-                                <div style="font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">Peak Month</div>
-                            </div>
-                            <div style="text-align: center;">
-                                <div style="font-size: 24px; font-weight: 700; color: var(--text-primary); margin-bottom: 4px;">+23%</div>
-                                <div style="font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">Growth Rate</div>
-                            </div>
-                            <div style="text-align: center;">
-                                <div style="font-size: 24px; font-weight: 700; color: var(--text-primary); margin-bottom: 4px;">₹50K</div>
-                                <div style="font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">Min Month</div>
-                            </div>
-                        </div>
                     </div>
                     <div class="chart-container">
                         <h3>Client Revenue Distribution</h3>
                         <div style="position: relative; height: 300px;">
                             <canvas id="clientChart"></canvas>
-                        </div>
-                        <div style="margin-top: 24px; display: flex; flex-direction: column; gap: 12px;">
-                            <div style="display: flex; align-items: center; justify-content: space-between; font-size: 13px;">
-                                <div style="display: flex; align-items: center;">
-                                    <span style="width: 12px; height: 12px; background: #11CDEF; border-radius: 3px; margin-right: 8px;"></span>
-                                    <span style="color: var(--text-secondary); flex: 1;">Top Client</span>
-                                </div>
-                                <span style="font-weight: 600; color: var(--text-primary);">35%</span>
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -253,6 +217,7 @@
                                     <th>Amount</th>
                                     <th>Date</th>
                                     <th>Status</th>
+                                    <th>Actions</th>
                                 </tr>
                             </thead>
                             <tbody id="recent-invoices-body">
@@ -263,152 +228,166 @@
                 </div>
             </div>
 
-            <!-- Enhanced Invoices Page -->
+            <!-- Invoices Page -->
             <div id="invoices-page" class="page">
-                <div class="page-header">
-                    <div>
-                        <h1>Invoices</h1>
-                        <p style="color: var(--text-muted); margin: 8px 0 0 0; font-size: 14px;">
-                            Manage your invoices and track payments
-                        </p>
-                    </div>
-                    <div class="header-actions">
-                        <div class="filter-tabs">
-                            <button class="filter-tab active" data-filter="all">All</button>
-                            <button class="filter-tab" data-filter="paid">Paid</button>
-                            <button class="filter-tab" data-filter="pending">Pending</button>
-                            <button class="filter-tab" data-filter="draft">Draft</button>
-                        </div>
-                        <button class="btn btn--primary" id="new-invoice-btn">
-                            <span>+</span>
-                            <span>New Invoice</span>
-                        </button>
-                    </div>
-                </div>
-                
-                <div class="table-container">
-                    <table class="invoices-table">
-                        <thead>
-                            <tr>
-                                <th>Invoice #</th>
-                                <th>Client</th>
-                                <th>Amount</th>
-                                <th>Date</th>
-                                <th>Due Date</th>
-                                <th>Status</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="invoices-body">
-                            <!-- Populated by JavaScript -->
-                        </tbody>
-                    </table>
+                <!-- Content will be populated by renderInvoices() function -->
+                <div class="loading-placeholder" style="text-align: center; padding: 50px; color: var(--text-muted);">
+                    <div style="font-size: 24px; margin-bottom: 16px;">📄</div>
+                    <h3>Loading Invoices...</h3>
+                    <p>Please wait while we load your invoice data</p>
                 </div>
             </div>
 
-            <!-- Enhanced Clients Page -->
+            <!-- Clients Page -->
             <div id="clients-page" class="page">
-                <div class="page-header">
-                    <div>
-                        <h1>Clients</h1>
-                        <p style="color: var(--text-muted); margin: 8px 0 0 0; font-size: 14px;">
-                            Manage your client relationships and track their performance
-                        </p>
-                    </div>
-                    <div class="header-actions">
-                        <div style="position: relative; width: 300px;">
-                            <span style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-muted);">🔍</span>
-                            <input type="text" style="width: 100%; padding: 10px 16px 10px 40px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; font-size: 14px; color: var(--text-primary); transition: all 0.2s ease;" placeholder="Search clients...">
-                        </div>
-                        <button class="btn btn--primary" id="add-client-btn">
-                            <span>+</span>
-                            <span>Add Client</span>
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Stats Overview -->
-                <div style="display: flex; justify-content: space-around; padding: 24px; background: var(--bg-secondary); border-radius: 12px; box-shadow: var(--shadow-sm); margin-bottom: 32px;">
-                    <div style="text-align: center; padding: 0 20px; border-right: 1px solid var(--border-light);">
-                        <div style="font-size: 32px; font-weight: 700; color: var(--text-primary); margin-bottom: 8px;">8</div>
-                        <div style="font-size: 14px; color: var(--text-muted); font-weight: 500;">Total Clients</div>
-                        <div style="display: inline-flex; align-items: center; gap: 4px; margin-top: 8px; padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: 600; background: rgba(45, 206, 137, 0.1); color: var(--success);">
-                            <span>↑</span>
-                            <span>2 new this month</span>
-                        </div>
-                    </div>
-                    <div style="text-align: center; padding: 0 20px; border-right: 1px solid var(--border-light);">
-                        <div style="font-size: 32px; font-weight: 700; color: var(--text-primary); margin-bottom: 8px;">₹19.5L</div>
-                        <div style="font-size: 14px; color: var(--text-muted); font-weight: 500;">Total Revenue</div>
-                        <div style="display: inline-flex; align-items: center; gap: 4px; margin-top: 8px; padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: 600; background: rgba(45, 206, 137, 0.1); color: var(--success);">
-                            <span>↑</span>
-                            <span>12.5% growth</span>
-                        </div>
-                    </div>
-                    <div style="text-align: center; padding: 0 20px; border-right: 1px solid var(--border-light);">
-                        <div style="font-size: 32px; font-weight: 700; color: var(--text-primary); margin-bottom: 8px;">₹2.4L</div>
-                        <div style="font-size: 14px; color: var(--text-muted); font-weight: 500;">Average Client Value</div>
-                        <div style="display: inline-flex; align-items: center; gap: 4px; margin-top: 8px; padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: 600; background: rgba(45, 206, 137, 0.1); color: var(--success);">
-                            <span>↑</span>
-                            <span>8% increase</span>
-                        </div>
-                    </div>
-                    <div style="text-align: center;">
-                        <div style="font-size: 32px; font-weight: 700; color: var(--text-primary); margin-bottom: 8px;">87%</div>
-                        <div style="font-size: 14px; color: var(--text-muted); font-weight: 500;">Payment Rate</div>
-                        <div style="display: inline-flex; align-items: center; gap: 4px; margin-top: 8px; padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: 600; background: rgba(45, 206, 137, 0.1); color: var(--success);">
-                            <span>↑</span>
-                            <span>5% improvement</span>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="clients-grid" id="clients-grid">
-                    <!-- Populated by JavaScript -->
+                <!-- Content will be populated by renderClients() function -->
+                <div class="loading-placeholder" style="text-align: center; padding: 50px; color: var(--text-muted);">
+                    <div style="font-size: 24px; margin-bottom: 16px;">👥</div>
+                    <h3>Loading Clients...</h3>
+                    <p>Please wait while we load your client data</p>
                 </div>
             </div>
 
-            <!-- Enhanced Analytics Page -->
+            <!-- Expenses Page -->
+            <div id="expenses-page" class="page">
+                <!-- Content will be populated by ExpenseUI class -->
+                <div class="loading-placeholder" style="text-align: center; padding: 50px; color: var(--text-muted);">
+                    <div style="font-size: 24px; margin-bottom: 16px;">💰</div>
+                    <h3>Loading Expenses...</h3>
+                    <p>Please wait while we load your expense data</p>
+                </div>
+            </div>
+
+            <!-- Analytics Page -->
             <div id="analytics-page" class="page">
-                <div class="page-header">
-                    <div>
-                        <h1>Analytics</h1>
-                        <p style="color: var(--text-muted); margin: 8px 0 0 0; font-size: 14px;">
-                            Analyze trends, filter data, and make informed decisions
-                        </p>
-                    </div>
+                <!-- Content will be populated by renderAnalytics() function -->
+                <div class="loading-placeholder" style="text-align: center; padding: 50px; color: var(--text-muted);">
+                    <div style="font-size: 24px; margin-bottom: 16px;">📈</div>
+                    <h3>Loading Analytics...</h3>
+                    <p>Please wait while we load your analytics data</p>
                 </div>
-                <!-- Date range filters will be added here by JavaScript -->
             </div>
 
-            <!-- Enhanced Settings Page -->
+            <!-- Settings Page -->
             <div id="settings-page" class="page">
-                <div class="page-header">
-                    <div>
-                        <h1>Settings</h1>
-                        <p style="color: var(--text-muted); margin: 8px 0 0 0; font-size: 14px;">
-                            Configure your profile, banking details, and preferences
-                        </p>
-                    </div>
+                <!-- Content will be populated by renderSettings() function -->
+                <div class="loading-placeholder" style="text-align: center; padding: 50px; color: var(--text-muted);">
+                    <div style="font-size: 24px; margin-bottom: 16px;">⚙️</div>
+                    <h3>Loading Settings...</h3>
+                    <p>Please wait while we load your settings</p>
                 </div>
+            </div>
+        </main>
+    </div>
 
-                <div class="settings-content">
-                    <form id="settings-form">
-                        <div class="settings-section">
-                            <h3>Profile Information</h3>
-                            <div class="form-group">
-                                <label class="form-label" for="profile-name">Full Name</label>
-                                <input type="text" class="form-control" id="profile-name">
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label" for="profile-email">Email</label>
-                                <input type="email" class="form-control" id="profile-email">
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label" for="profile-phone">Phone</label>
-                                <input type="tel" class="form-control" id="profile-phone">
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label" for="profile-address">Address</label>
-                                <textarea class="form-control" id="profile-address" rows="3" placeholder="Enter your business address"></textarea>
-                            </div
+    <!-- Invoice Modal -->
+    <div id="invoice-modal" class="modal hidden">
+        <div class="modal-content">
+            <!-- Modal content will be populated by JavaScript -->
+        </div>
+    </div>
+
+    <!-- Client Modal -->
+    <div id="client-modal" class="modal hidden">
+        <div class="modal-content">
+            <!-- Modal content will be populated by JavaScript -->
+        </div>
+    </div>
+
+    <!-- Expense Modal -->
+    <div id="expense-modal" class="modal hidden">
+        <div class="modal-content">
+            <!-- Modal content will be populated by JavaScript -->
+        </div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div id="toast-container" class="toast-container">
+        <!-- Toast notifications will be added here -->
+    </div>
+
+    <!-- Debug Console -->
+    <div id="debug-console" style="position: fixed; bottom: 10px; right: 10px; background: rgba(0,0,0,0.8); color: white; padding: 10px; border-radius: 5px; font-family: monospace; font-size: 12px; max-width: 300px; z-index: 10000; display: none;">
+        <div id="debug-output"></div>
+        <button onclick="document.getElementById('debug-console').style.display='none'" style="float: right; background: none; border: none; color: white;">×</button>
+    </div>
+
+    <!-- Load JavaScript with error handling -->
+    <script>
+        // Debug logging
+        console.log('🚀 Starting to load app.js...');
+        let debugLog = [];
+        
+        function addDebugLog(message) {
+            debugLog.push(new Date().toLocaleTimeString() + ': ' + message);
+            console.log(message);
+            
+            // Show debug console if there are errors
+            if (message.includes('❌') || message.includes('🚨')) {
+                const debugConsole = document.getElementById('debug-console');
+                const debugOutput = document.getElementById('debug-output');
+                debugOutput.innerHTML = debugLog.slice(-5).join('<br>');
+                debugConsole.style.display = 'block';
+            }
+        }
+        
+        window.addEventListener('error', function(e) {
+            addDebugLog('❌ JavaScript Error: ' + e.error?.message);
+            addDebugLog('File: ' + e.filename + ' Line: ' + e.lineno);
+        });
+        
+        window.addEventListener('load', function() {
+            addDebugLog('✅ Window loaded');
+            
+            // Check if app initialized
+            setTimeout(() => {
+                if (typeof appData === 'undefined' || !appData?.dataLoaded) {
+                    addDebugLog('🚨 App not initialized, forcing emergency init...');
+                    if (typeof emergencyInit === 'function') {
+                        emergencyInit();
+                        addDebugLog('✅ Emergency init called');
+                    } else if (typeof addSampleDataIfEmpty === 'function') {
+                        addSampleDataIfEmpty();
+                        addDebugLog('✅ Sample data added');
+                    } else {
+                        addDebugLog('❌ Emergency init not available');
+                        // Show error message instead of reloading
+                        addDebugLog('🔄 Please refresh page manually');
+                    }
+                }
+            }, 2000);
+        });
+    </script>
+    <script src="app.js?v=3" onerror="addDebugLog('❌ Failed to load app.js')"></script>
+    <script>
+        console.log('✅ app.js loaded successfully');
+        addDebugLog('✅ app.js script tag processed');
+        
+        // Additional emergency init fallback
+        setTimeout(() => {
+            if (typeof appData === 'undefined' || !appData?.dataLoaded) {
+                console.log('⚠️ Final fallback: creating minimal app data');
+                window.appData = {
+                    dataLoaded: true,
+                    invoices: [
+                        { id: 'HP-2526-001', client: 'Sample Client', amount: 5000, date: '2025-08-01', dueDate: '2025-08-31', status: 'Paid', clientId: 'client-1' },
+                        { id: 'HP-2526-002', client: 'Another Client', amount: 7500, date: '2025-08-05', dueDate: '2025-09-05', status: 'Pending', clientId: 'client-2' }
+                    ],
+                    clients: [
+                        { id: 'client-1', name: 'Sample Client', email: 'client@example.com' },
+                        { id: 'client-2', name: 'Another Client', email: 'another@example.com' }
+                    ],
+                    settings: {
+                        currency: 'INR',
+                        taxRate: 18,
+                        invoicePrefix: 'HP-2526',
+                        profileName: 'Hariprasad Sivakumar'
+                    }
+                };
+                if (typeof renderDashboard === 'function') renderDashboard();
+                addDebugLog('✅ Emergency data created');
+            }
+        }, 4000);
+    </script>
+</body>
+</html>
