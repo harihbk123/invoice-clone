@@ -1,12 +1,414 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>Invoice Manager - Hariprasad Sivakumar</title>
-	<!-- ...rest of the code from hari-invoice-manager/index.html... -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Invoice Manager - Hariprasad Sivakumar</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Third-party Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- PDF Generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+
+    <!-- Date Picker -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <link rel="stylesheet" href="https://npmcdn.com/flatpickr/dist/plugins/monthSelect/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://npmcdn.com/flatpickr/dist/plugins/monthSelect/index.js"></script>
+    
+    <!-- Enhanced Stylesheet -->
+    <link rel="stylesheet" href="style.css">
+    
+    <!-- Auth Check -->
+    <script>
+        // Check authentication before loading the app
+        const isLoggedIn = localStorage.getItem('isLoggedIn');
+        const loginTime = localStorage.getItem('loginTime');
+        
+        if (!isLoggedIn || isLoggedIn !== 'true') {
+            window.location.href = 'login.html';
+        } else if (loginTime) {
+            const now = new Date().getTime();
+            const loginTimestamp = parseInt(loginTime);
+            const hoursDiff = (now - loginTimestamp) / (1000 * 60 * 60);
+            
+            if (hoursDiff > 24) {
+                localStorage.removeItem('isLoggedIn');
+                localStorage.removeItem('username');
+                localStorage.removeItem('loginTime');
+                window.location.href = 'login.html';
+            }
+        }
+    </script>
 </head>
 <body>
-	<!-- ...rest of the code from hari-invoice-manager/index.html... -->
-</body>
-</html>
+    <!-- App Layout -->
+    <div class="app-layout">
+        <!-- Enhanced Sidebar Navigation -->
+        <nav class="sidebar">
+            <div class="sidebar-header">
+                <h2>Invoice Manager</h2>
+                <p class="sidebar-subtitle">Hariprasad S.</p>
+                <!-- Logout button will be added here by JavaScript -->
+            </div>
+            
+            <!-- Enhanced User Info Section -->
+            <div class="user-info">
+                <div class="user-profile">
+                    <div class="user-avatar">HS</div>
+                    <div class="user-details">
+                        <h4>Hariprasad S.</h4>
+                        <p>👋 Welcome back!</p>
+                    </div>
+                </div>
+            </div>
+            
+            <ul class="sidebar-nav">
+                <li><a href="#" class="nav-link active" data-page="dashboard">
+                    <span class="nav-icon">📊</span>
+                    <span>Dashboard</span>
+                </a></li>
+                <li><a href="#" class="nav-link" data-page="invoices">
+                    <span class="nav-icon">📄</span>
+                    <span>Invoices</span>
+                </a></li>
+                <li><a href="#" class="nav-link" data-page="clients">
+                    <span class="nav-icon">👥</span>
+                    <span>Clients</span>
+                </a></li>
+                <li><a href="#" class="nav-link" data-page="expenses">
+                    <span class="nav-icon">💰</span>
+                    <span>Expenses</span>
+                </a></li>
+                <li><a href="#" class="nav-link" data-page="analytics">
+                    <span class="nav-icon">📈</span>
+                    <span>Analytics</span>
+                </a></li>
+                <li><a href="#" class="nav-link" data-page="settings">
+                    <span class="nav-icon">⚙️</span>
+                    <span>Settings</span>
+                </a></li>
+            </ul>
+        </nav>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <!-- Expenses Page -->
+            <div id="expenses-page" class="page"></div>
+            
+            <!-- Enhanced Dashboard Page -->
+            <div id="dashboard-page" class="page active">
+                <div class="page-header">
+                    <div>
+                        <h1>Dashboard</h1>
+                        <p style="color: var(--text-muted); margin: 8px 0 0 0; font-size: 14px;">
+                            Track your business performance and financial metrics
+                        </p>
+                    </div>
+                    <div class="header-actions">
+                        <div class="notification-btn" style="width: 40px; height: 40px; border-radius: 50%; background: var(--bg-secondary); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; cursor: pointer; position: relative; transition: all 0.2s ease;">
+                            <span>🔔</span>
+                            <span style="position: absolute; top: -4px; right: -4px; width: 18px; height: 18px; background: var(--danger); color: white; border-radius: 50%; font-size: 10px; display: flex; align-items: center; justify-content: center; font-weight: 600;">3</span>
+                        </div>
+                        <button class="btn btn--primary" id="create-invoice-btn">
+                            <span>+</span>
+                            <span>Create Invoice</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Enhanced Metrics Cards -->
+                <div class="metrics-grid">
+                    <div class="metric-card">
+                        <div class="stat-header">
+                            <div class="stat-icon">💰</div>
+                            <div class="stat-trend up">
+                                <span>↑</span>
+                                <span>12.5%</span>
+                            </div>
+                        </div>
+                        <div class="metric-value">₹0</div>
+                        <div class="metric-label">Total Earnings</div>
+                        <div class="stat-footer">
+                            <span>📅</span>
+                            <span>Updated just now</span>
+                        </div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="stat-header">
+                            <div class="stat-icon success">👥</div>
+                            <div class="stat-trend up">
+                                <span>↑</span>
+                                <span>2 new</span>
+                            </div>
+                        </div>
+                        <div class="metric-value">0</div>
+                        <div class="metric-label">Total Clients</div>
+                        <div class="stat-footer">
+                            <span>✨</span>
+                            <span>Active & growing</span>
+                        </div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="stat-header">
+                            <div class="stat-icon warning">📄</div>
+                            <div class="stat-trend up">
+                                <span>↑</span>
+                                <span>8.3%</span>
+                            </div>
+                        </div>
+                        <div class="metric-value">0</div>
+                        <div class="metric-label">Total Invoices</div>
+                        <div class="stat-footer">
+                            <span>⏱️</span>
+                            <span>3 pending approval</span>
+                        </div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="stat-header">
+                            <div class="stat-icon info">📊</div>
+                            <div class="stat-trend down">
+                                <span>↓</span>
+                                <span>3.2%</span>
+                            </div>
+                        </div>
+                        <div class="metric-value">₹0</div>
+                        <div class="metric-label">Average Monthly</div>
+                        <div class="stat-footer">
+                            <span>📈</span>
+                            <span>Based on 12 months</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Enhanced Charts Section -->
+                <div class="charts-section">
+                    <div class="chart-container">
+                        <div class="chart-header">
+                            <h3>Monthly Earnings Trend</h3>
+                            <div class="chart-actions">
+                                <button class="chart-btn">Daily</button>
+                                <button class="chart-btn active">Monthly</button>
+                                <button class="chart-btn">Yearly</button>
+                            </div>
+                        </div>
+                        <div style="position: relative; height: 300px; background: linear-gradient(180deg, rgba(94, 114, 228, 0.02) 0%, transparent 100%); border-radius: 12px; padding: 24px;">
+                            <canvas id="monthlyChart"></canvas>
+                        </div>
+                        <div style="display: flex; justify-content: space-around; padding: 20px; background: linear-gradient(135deg, var(--bg-tertiary) 0%, #EFF2F7 100%); border-radius: 12px; margin-top: 20px;">
+                            <div style="text-align: center;">
+                                <div style="font-size: 24px; font-weight: 700; color: var(--text-primary); margin-bottom: 4px;">₹2.8L</div>
+                                <div style="font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">Peak Month</div>
+                            </div>
+                            <div style="text-align: center;">
+                                <div style="font-size: 24px; font-weight: 700; color: var(--text-primary); margin-bottom: 4px;">+23%</div>
+                                <div style="font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">Growth Rate</div>
+                            </div>
+                            <div style="text-align: center;">
+                                <div style="font-size: 24px; font-weight: 700; color: var(--text-primary); margin-bottom: 4px;">₹50K</div>
+                                <div style="font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">Min Month</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <h3>Client Revenue Distribution</h3>
+                        <div style="position: relative; height: 300px;">
+                            <canvas id="clientChart"></canvas>
+                        </div>
+                        <div style="margin-top: 24px; display: flex; flex-direction: column; gap: 12px;">
+                            <div style="display: flex; align-items: center; justify-content: space-between; font-size: 13px;">
+                                <div style="display: flex; align-items: center;">
+                                    <span style="width: 12px; height: 12px; background: #11CDEF; border-radius: 3px; margin-right: 8px;"></span>
+                                    <span style="color: var(--text-secondary); flex: 1;">Top Client</span>
+                                </div>
+                                <span style="font-weight: 600; color: var(--text-primary);">35%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Enhanced Recent Invoices -->
+                <div class="recent-invoices">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; padding: 24px 24px 0;">
+                        <h3 style="font-size: 18px; font-weight: 600; color: var(--text-primary); margin: 0;">Recent Invoices</h3>
+                        <a href="#" style="color: var(--primary); text-decoration: none; font-size: 14px; font-weight: 500; display: flex; align-items: center; gap: 4px; transition: gap 0.2s ease;">
+                            View All
+                            <span>→</span>
+                        </a>
+                    </div>
+                    <div class="table-container">
+                        <table class="invoices-table">
+                            <thead>
+                                <tr>
+                                    <th>Invoice #</th>
+                                    <th>Client</th>
+                                    <th>Amount</th>
+                                    <th>Date</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recent-invoices-body">
+                                <!-- Populated by JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Enhanced Invoices Page -->
+            <div id="invoices-page" class="page">
+                <div class="page-header">
+                    <div>
+                        <h1>Invoices</h1>
+                        <p style="color: var(--text-muted); margin: 8px 0 0 0; font-size: 14px;">
+                            Manage your invoices and track payments
+                        </p>
+                    </div>
+                    <div class="header-actions">
+                        <div class="filter-tabs">
+                            <button class="filter-tab active" data-filter="all">All</button>
+                            <button class="filter-tab" data-filter="paid">Paid</button>
+                            <button class="filter-tab" data-filter="pending">Pending</button>
+                            <button class="filter-tab" data-filter="draft">Draft</button>
+                        </div>
+                        <button class="btn btn--primary" id="new-invoice-btn">
+                            <span>+</span>
+                            <span>New Invoice</span>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="table-container">
+                    <table class="invoices-table">
+                        <thead>
+                            <tr>
+                                <th>Invoice #</th>
+                                <th>Client</th>
+                                <th>Amount</th>
+                                <th>Date</th>
+                                <th>Due Date</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="invoices-body">
+                            <!-- Populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Enhanced Clients Page -->
+            <div id="clients-page" class="page">
+                <div class="page-header">
+                    <div>
+                        <h1>Clients</h1>
+                        <p style="color: var(--text-muted); margin: 8px 0 0 0; font-size: 14px;">
+                            Manage your client relationships and track their performance
+                        </p>
+                    </div>
+                    <div class="header-actions">
+                        <div style="position: relative; width: 300px;">
+                            <span style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-muted);">🔍</span>
+                            <input type="text" style="width: 100%; padding: 10px 16px 10px 40px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; font-size: 14px; color: var(--text-primary); transition: all 0.2s ease;" placeholder="Search clients...">
+                        </div>
+                        <button class="btn btn--primary" id="add-client-btn">
+                            <span>+</span>
+                            <span>Add Client</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Stats Overview -->
+                <div style="display: flex; justify-content: space-around; padding: 24px; background: var(--bg-secondary); border-radius: 12px; box-shadow: var(--shadow-sm); margin-bottom: 32px;">
+                    <div style="text-align: center; padding: 0 20px; border-right: 1px solid var(--border-light);">
+                        <div style="font-size: 32px; font-weight: 700; color: var(--text-primary); margin-bottom: 8px;">8</div>
+                        <div style="font-size: 14px; color: var(--text-muted); font-weight: 500;">Total Clients</div>
+                        <div style="display: inline-flex; align-items: center; gap: 4px; margin-top: 8px; padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: 600; background: rgba(45, 206, 137, 0.1); color: var(--success);">
+                            <span>↑</span>
+                            <span>2 new this month</span>
+                        </div>
+                    </div>
+                    <div style="text-align: center; padding: 0 20px; border-right: 1px solid var(--border-light);">
+                        <div style="font-size: 32px; font-weight: 700; color: var(--text-primary); margin-bottom: 8px;">₹19.5L</div>
+                        <div style="font-size: 14px; color: var(--text-muted); font-weight: 500;">Total Revenue</div>
+                        <div style="display: inline-flex; align-items: center; gap: 4px; margin-top: 8px; padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: 600; background: rgba(45, 206, 137, 0.1); color: var(--success);">
+                            <span>↑</span>
+                            <span>12.5% growth</span>
+                        </div>
+                    </div>
+                    <div style="text-align: center; padding: 0 20px; border-right: 1px solid var(--border-light);">
+                        <div style="font-size: 32px; font-weight: 700; color: var(--text-primary); margin-bottom: 8px;">₹2.4L</div>
+                        <div style="font-size: 14px; color: var(--text-muted); font-weight: 500;">Average Client Value</div>
+                        <div style="display: inline-flex; align-items: center; gap: 4px; margin-top: 8px; padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: 600; background: rgba(45, 206, 137, 0.1); color: var(--success);">
+                            <span>↑</span>
+                            <span>8% increase</span>
+                        </div>
+                    </div>
+                    <div style="text-align: center;">
+                        <div style="font-size: 32px; font-weight: 700; color: var(--text-primary); margin-bottom: 8px;">87%</div>
+                        <div style="font-size: 14px; color: var(--text-muted); font-weight: 500;">Payment Rate</div>
+                        <div style="display: inline-flex; align-items: center; gap: 4px; margin-top: 8px; padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: 600; background: rgba(45, 206, 137, 0.1); color: var(--success);">
+                            <span>↑</span>
+                            <span>5% improvement</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="clients-grid" id="clients-grid">
+                    <!-- Populated by JavaScript -->
+                </div>
+            </div>
+
+            <!-- Enhanced Analytics Page -->
+            <div id="analytics-page" class="page">
+                <div class="page-header">
+                    <div>
+                        <h1>Analytics</h1>
+                        <p style="color: var(--text-muted); margin: 8px 0 0 0; font-size: 14px;">
+                            Analyze trends, filter data, and make informed decisions
+                        </p>
+                    </div>
+                </div>
+                <!-- Date range filters will be added here by JavaScript -->
+            </div>
+
+            <!-- Enhanced Settings Page -->
+            <div id="settings-page" class="page">
+                <div class="page-header">
+                    <div>
+                        <h1>Settings</h1>
+                        <p style="color: var(--text-muted); margin: 8px 0 0 0; font-size: 14px;">
+                            Configure your profile, banking details, and preferences
+                        </p>
+                    </div>
+                </div>
+
+                <div class="settings-content">
+                    <form id="settings-form">
+                        <div class="settings-section">
+                            <h3>Profile Information</h3>
+                            <div class="form-group">
+                                <label class="form-label" for="profile-name">Full Name</label>
+                                <input type="text" class="form-control" id="profile-name">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="profile-email">Email</label>
+                                <input type="email" class="form-control" id="profile-email">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="profile-phone">Phone</label>
+                                <input type="tel" class="form-control" id="profile-phone">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="profile-address">Address</label>
+                                <textarea class="form-control" id="profile-address" rows="3" placeholder="Enter your business address"></textarea>
+                            </div
