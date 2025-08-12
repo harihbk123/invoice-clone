@@ -2487,8 +2487,10 @@ async function saveSettingsToSupabase(settingsData) {
 
 // REPLACE YOUR ENTIRE setupNavigation FUNCTION WITH THIS:
 
+// REPLACE YOUR EXISTING setupNavigation FUNCTION WITH THIS ENHANCED VERSION
+
 function setupNavigation() {
-    console.log('Setting up navigation...');
+    console.log('Setting up enhanced navigation...');
     const navLinks = document.querySelectorAll('.nav-link');
     const pages = document.querySelectorAll('.page');
     
@@ -2506,13 +2508,11 @@ function setupNavigation() {
             if (currentPageId === 'expenses-page') {
                 console.log('Leaving expenses page - running cleanup');
                 
-                // Destroy expense UI components if they exist
                 if (window.expenseUI) {
                     if (typeof window.expenseUI.cleanupExpensesPage === 'function') {
                         window.expenseUI.cleanupExpensesPage();
                     }
                     
-                    // Destroy expense charts explicitly
                     if (window.expenseUI.expenseChart) {
                         try {
                             window.expenseUI.expenseChart.destroy();
@@ -2532,101 +2532,125 @@ function setupNavigation() {
                     }
                 }
                 
-                // Close expense modal if it's open
                 const expenseModal = document.getElementById('expense-modal');
                 if (expenseModal && !expenseModal.classList.contains('hidden')) {
                     expenseModal.classList.add('hidden');
                 }
             }
             
-            // Run general cleanup for expense filters that might have leaked
             if (typeof cleanupExpenseFilters === 'function') {
                 cleanupExpenseFilters();
             }
             
-            // Switch active states for navigation
-            navLinks.forEach(nl => nl.classList.remove('active'));
-            link.classList.add('active');
+            // Remove active states from all nav links and add modern animation
+            navLinks.forEach(nl => {
+                nl.classList.remove('active');
+                // Remove any existing animation classes
+                nl.classList.remove('nav-item-enter');
+            });
             
-            // Switch active states for pages
-            pages.forEach(page => page.classList.remove('active'));
+            // Add active state with animation to clicked link
+            link.classList.add('active');
+            link.classList.add('nav-item-enter');
+            
+            // Update user avatar active indicator
+            const userAvatar = document.querySelector('.user-avatar');
+            if (userAvatar) {
+                userAvatar.style.borderColor = 'var(--color-primary)';
+                setTimeout(() => {
+                    userAvatar.style.borderColor = 'var(--color-border)';
+                }, 300);
+            }
+            
+            // Switch active states for pages with fade animation
+            pages.forEach(page => {
+                page.classList.remove('active');
+                page.classList.add('page-fade-out');
+            });
+            
             const targetElement = document.getElementById(`${targetPage}-page`);
             
             if (targetElement) {
-                targetElement.classList.add('active');
-                
-                // Render the appropriate page content after a small delay
+                // Small delay for fade out effect
                 setTimeout(() => {
-                    // Run cleanup again after page switch (for any lingering elements)
-                    if (typeof cleanupExpenseFilters === 'function' && targetPage !== 'expenses') {
-                        cleanupExpenseFilters();
-                    }
+                    pages.forEach(page => page.classList.remove('page-fade-out'));
+                    targetElement.classList.add('active');
+                    targetElement.classList.add('page-fade-in');
                     
-                    // Render the appropriate page based on target
-                    switch(targetPage) {
-                        case 'dashboard':
-                            if (typeof renderDashboard === 'function') {
-                                renderDashboard();
-                            }
-                            break;
-                            
-                        case 'invoices':
-                            if (typeof renderInvoices === 'function') {
-                                renderInvoices();
-                            }
-                            break;
-                            
-                        case 'clients':
-                            if (typeof renderClients === 'function') {
-                                renderClients();
-                            }
-                            break;
-                            
-                        case 'analytics':
-                            if (typeof renderAnalytics === 'function') {
-                                renderAnalytics();
-                            }
-                            break;
-                            
-                        case 'settings':
-                            if (typeof renderSettings === 'function') {
-                                renderSettings();
-                            }
-                            break;
-                            
-                        case 'expenses':
-                            // Initialize Expense UI
-                            if (window.expenseUI) {
-                                console.log('Initializing Expense UI');
-                                try {
-                                    window.expenseUI.initializeUI();
-                                } catch (error) {
-                                    console.error('Error initializing Expense UI:', error);
-                                    showToast('Error loading expenses page', 'error');
+                    // Remove animation class after animation completes
+                    setTimeout(() => {
+                        targetElement.classList.remove('page-fade-in');
+                        link.classList.remove('nav-item-enter');
+                    }, 300);
+                    
+                    // Render the appropriate page content
+                    setTimeout(() => {
+                        if (typeof cleanupExpenseFilters === 'function' && targetPage !== 'expenses') {
+                            cleanupExpenseFilters();
+                        }
+                        
+                        switch(targetPage) {
+                            case 'dashboard':
+                                if (typeof renderDashboard === 'function') {
+                                    renderDashboard();
                                 }
-                            } else if (window.expenseManager) {
-                                // Try to create ExpenseUI if manager exists but UI doesn't
-                                console.log('Creating ExpenseUI instance');
-                                window.expenseUI = new ExpenseUI(window.expenseManager, showToast);
-                                window.expenseUI.initializeUI();
-                            } else {
-                                console.warn('Expense module not initialized');
-                                // Try to initialize the expense module
-                                initializeExpenseModule().then(() => {
-                                    if (window.expenseUI) {
+                                break;
+                                
+                            case 'invoices':
+                                if (typeof renderInvoices === 'function') {
+                                    renderInvoices();
+                                }
+                                break;
+                                
+                            case 'clients':
+                                if (typeof renderClients === 'function') {
+                                    renderClients();
+                                }
+                                break;
+                                
+                            case 'analytics':
+                                if (typeof renderAnalytics === 'function') {
+                                    renderAnalytics();
+                                }
+                                break;
+                                
+                            case 'settings':
+                                if (typeof renderSettings === 'function') {
+                                    renderSettings();
+                                }
+                                break;
+                                
+                            case 'expenses':
+                                if (window.expenseUI) {
+                                    console.log('Initializing Expense UI');
+                                    try {
                                         window.expenseUI.initializeUI();
+                                    } catch (error) {
+                                        console.error('Error initializing Expense UI:', error);
+                                        showToast('Error loading expenses page', 'error');
                                     }
-                                }).catch(error => {
-                                    console.error('Failed to initialize expense module:', error);
-                                    showToast('Expense module not available', 'error');
-                                });
-                            }
-                            break;
-                            
-                        default:
-                            console.warn('Unknown page:', targetPage);
-                    }
-                }, 50);
+                                } else if (window.expenseManager) {
+                                    console.log('Creating ExpenseUI instance');
+                                    window.expenseUI = new ExpenseUI(window.expenseManager, showToast);
+                                    window.expenseUI.initializeUI();
+                                } else {
+                                    console.warn('Expense module not initialized');
+                                    initializeExpenseModule().then(() => {
+                                        if (window.expenseUI) {
+                                            window.expenseUI.initializeUI();
+                                        }
+                                    }).catch(error => {
+                                        console.error('Failed to initialize expense module:', error);
+                                        showToast('Expense module not available', 'error');
+                                    });
+                                }
+                                break;
+                                
+                            default:
+                                console.warn('Unknown page:', targetPage);
+                        }
+                    }, 50);
+                }, 150);
             } else {
                 console.error('Target page not found:', targetPage);
                 showToast('Page not found', 'error');
@@ -2634,6 +2658,28 @@ function setupNavigation() {
         });
     });
     
+    // Enhanced hover effects for navigation
+    navLinks.forEach(link => {
+        link.addEventListener('mouseenter', (e) => {
+            if (!link.classList.contains('active')) {
+                link.classList.add('nav-item-hover');
+            }
+        });
+        
+        link.addEventListener('mouseleave', (e) => {
+            link.classList.remove('nav-item-hover');
+        });
+    });
+    
+    // Set initial active state
+    const hash = window.location.hash.slice(1) || 'dashboard';
+    const initialLink = document.querySelector(`[data-page="${hash}"]`);
+    if (initialLink) {
+        initialLink.click();
+    }
+    
+    console.log('Enhanced navigation setup complete');
+}
     // Set initial active state based on URL hash or default to dashboard
     const hash = window.location.hash.slice(1) || 'dashboard';
     const initialLink = document.querySelector(`[data-page="${hash}"]`);
@@ -2725,25 +2771,77 @@ function cleanupExpenseFilters() {
 }
 
 
+// COMPLETE ENHANCED DASHBOARD FUNCTIONS - REPLACE ALL YOUR EXISTING DASHBOARD FUNCTIONS
+
 function renderDashboard() {
-    console.log('Rendering dashboard...');
+    console.log('Rendering enhanced dashboard...');
     cleanupExpenseFilters();
-    // Clear dynamic content
+    
+    // Clear dynamic content with smooth transitions
     const dashboardPage = document.getElementById('dashboard-page');
     if (dashboardPage) {
+        // Add loading state to dashboard
+        dashboardPage.classList.add('dashboard-loading');
+        
         // Clear recent invoices
         const tbody = dashboardPage.querySelector('#recent-invoices-body');
-        if (tbody) tbody.innerHTML = '';
-        // Destroy charts if exist
-        if (window.monthlyChart && typeof window.monthlyChart.destroy === 'function') { window.monthlyChart.destroy(); window.monthlyChart = null; }
-        if (window.clientChart && typeof window.clientChart.destroy === 'function') { window.clientChart.destroy(); window.clientChart = null; }
+        if (tbody) {
+            tbody.style.opacity = '0';
+            setTimeout(() => {
+                tbody.innerHTML = '';
+                tbody.style.opacity = '1';
+            }, 150);
+        }
+        
+        // Destroy existing charts with cleanup
+        if (window.monthlyChart && typeof window.monthlyChart.destroy === 'function') { 
+            window.monthlyChart.destroy(); 
+            window.monthlyChart = null; 
+        }
+        if (window.clientChart && typeof window.clientChart.destroy === 'function') { 
+            window.clientChart.destroy(); 
+            window.clientChart = null; 
+        }
     }
+    
+    // Update metrics with loading animation
     updateDashboardMetrics();
-    renderRecentInvoices();
-    setTimeout(() => renderCharts(), 100);
+    
+    // Render recent invoices with staggered animation
+    setTimeout(() => {
+        renderRecentInvoices();
+    }, 200);
+    
+    // Add entrance animations to metric cards
+    setTimeout(() => {
+        const metricCards = document.querySelectorAll('.metric-card');
+        metricCards.forEach((card, index) => {
+            setTimeout(() => {
+                card.classList.add('card-animate-in');
+                animationUtils.pulse(card);
+            }, index * 150);
+        });
+    }, 100);
+    
+    // Render charts with enhanced animations
+    setTimeout(() => {
+        renderCharts();
+        
+        // Remove loading state
+        if (dashboardPage) {
+            dashboardPage.classList.remove('dashboard-loading');
+            dashboardPage.classList.add('dashboard-loaded');
+        }
+    }, 400);
+    
+    // Add welcome message for new users
+    if (appData.invoices.length === 0) {
+        showWelcomeMessage();
+    }
 }
 
 function updateDashboardMetrics() {
+    // Calculate comprehensive metrics
     const totalEarnings = appData.invoices
         .filter(inv => inv.status === 'Paid')
         .reduce((sum, inv) => sum + inv.amount, 0);
@@ -2752,13 +2850,173 @@ function updateDashboardMetrics() {
         ? appData.monthlyEarnings.reduce((sum, m) => sum + m.amount, 0) / appData.monthlyEarnings.length
         : 0;
 
-    const metricCards = document.querySelectorAll('.metric-value');
+    // Calculate growth percentages for enhanced display
+    const currentMonth = new Date().getMonth();
+    const currentYear = new Date().getFullYear();
+    
+    const thisMonthEarnings = appData.invoices
+        .filter(inv => {
+            const invDate = new Date(inv.date);
+            return inv.status === 'Paid' && 
+                   invDate.getMonth() === currentMonth && 
+                   invDate.getFullYear() === currentYear;
+        })
+        .reduce((sum, inv) => sum + inv.amount, 0);
+
+    const lastMonthEarnings = appData.invoices
+        .filter(inv => {
+            const invDate = new Date(inv.date);
+            const lastMonth = currentMonth === 0 ? 11 : currentMonth - 1;
+            const lastMonthYear = currentMonth === 0 ? currentYear - 1 : currentYear;
+            return inv.status === 'Paid' && 
+                   invDate.getMonth() === lastMonth && 
+                   invDate.getFullYear() === lastMonthYear;
+        })
+        .reduce((sum, inv) => sum + inv.amount, 0);
+
+    const monthlyGrowth = lastMonthEarnings > 0 
+        ? ((thisMonthEarnings - lastMonthEarnings) / lastMonthEarnings * 100).toFixed(1)
+        : thisMonthEarnings > 0 ? 100 : 0;
+
+    // Calculate additional metrics
+    const pendingInvoices = appData.invoices.filter(inv => inv.status === 'Pending').length;
+    const overdueInvoices = appData.invoices.filter(inv => {
+        const dueDate = new Date(inv.dueDate);
+        const today = new Date();
+        return inv.status === 'Pending' && dueDate < today;
+    }).length;
+
+    // Update metric cards with enhanced animations
+    const metricCards = document.querySelectorAll('.metric-card');
     if (metricCards.length >= 4) {
-        metricCards[0].textContent = `₹${formatNumber(totalEarnings)}`;
-        metricCards[1].textContent = appData.totalClients;
-        metricCards[2].textContent = appData.totalInvoices;
-        metricCards[3].textContent = `₹${formatNumber(avgMonthly)}`;
+        // Total Earnings Card with Growth Indicator
+        const earningsCard = metricCards[0];
+        const earningsValue = earningsCard.querySelector('.metric-value');
+        const earningsLabel = earningsCard.querySelector('.metric-label');
+        
+        if (earningsValue) {
+            // Animate number change
+            animateNumberChange(earningsValue, totalEarnings, '₹');
+        }
+        
+        // Add or update growth indicator
+        let growthElement = earningsCard.querySelector('.metric-growth');
+        if (!growthElement && earningsLabel) {
+            growthElement = document.createElement('div');
+            growthElement.className = 'metric-growth';
+            earningsLabel.parentNode.appendChild(growthElement);
+        }
+        
+        if (growthElement) {
+            const growthClass = monthlyGrowth >= 0 ? 'positive' : 'negative';
+            const growthIcon = monthlyGrowth >= 0 ? '📈' : '📉';
+            const growthText = monthlyGrowth == 0 ? 'No change' : `${Math.abs(monthlyGrowth)}% vs last month`;
+            
+            growthElement.innerHTML = `
+                <div class="growth-indicator ${growthClass}">
+                    <span class="growth-icon">${growthIcon}</span>
+                    <span class="growth-text">${growthText}</span>
+                </div>
+            `;
+            
+            // Add entrance animation
+            setTimeout(() => {
+                growthElement.classList.add('growth-animate-in');
+            }, 500);
+        }
+
+        // Total Clients Card
+        const clientsCard = metricCards[1];
+        const clientsValue = clientsCard.querySelector('.metric-value');
+        if (clientsValue) {
+            animateNumberChange(clientsValue, appData.totalClients);
+        }
+        
+        // Add client status indicator
+        let clientStatusElement = clientsCard.querySelector('.metric-status');
+        if (!clientStatusElement && clientsCard.querySelector('.metric-label')) {
+            clientStatusElement = document.createElement('div');
+            clientStatusElement.className = 'metric-status';
+            clientsCard.querySelector('.metric-label').parentNode.appendChild(clientStatusElement);
+        }
+        if (clientStatusElement) {
+            const activeClients = appData.clients.filter(c => c.total_amount > 0).length;
+            clientStatusElement.innerHTML = `
+                <div class="status-indicator">
+                    <span class="status-dot active"></span>
+                    <span class="status-text">${activeClients} active clients</span>
+                </div>
+            `;
+        }
+
+        // Total Invoices Card
+        const invoicesCard = metricCards[2];
+        const invoicesValue = invoicesCard.querySelector('.metric-value');
+        if (invoicesValue) {
+            animateNumberChange(invoicesValue, appData.totalInvoices);
+        }
+        
+        // Add invoice status breakdown
+        let invoiceStatusElement = invoicesCard.querySelector('.metric-status');
+        if (!invoiceStatusElement && invoicesCard.querySelector('.metric-label')) {
+            invoiceStatusElement = document.createElement('div');
+            invoiceStatusElement.className = 'metric-status';
+            invoicesCard.querySelector('.metric-label').parentNode.appendChild(invoiceStatusElement);
+        }
+        if (invoiceStatusElement) {
+            invoiceStatusElement.innerHTML = `
+                <div class="status-breakdown">
+                    <span class="status-item">
+                        <span class="status-dot pending"></span>
+                        ${pendingInvoices} pending
+                    </span>
+                    ${overdueInvoices > 0 ? `
+                        <span class="status-item warning">
+                            <span class="status-dot overdue"></span>
+                            ${overdueInvoices} overdue
+                        </span>
+                    ` : ''}
+                </div>
+            `;
+        }
+
+        // Average Monthly Card
+        const avgCard = metricCards[3];
+        const avgValue = avgCard.querySelector('.metric-value');
+        if (avgValue) {
+            animateNumberChange(avgValue, avgMonthly, '₹');
+        }
+        
+        // Add monthly comparison
+        let monthlyCompElement = avgCard.querySelector('.metric-comparison');
+        if (!monthlyCompElement && avgCard.querySelector('.metric-label')) {
+            monthlyCompElement = document.createElement('div');
+            monthlyCompElement.className = 'metric-comparison';
+            avgCard.querySelector('.metric-label').parentNode.appendChild(monthlyCompElement);
+        }
+        if (monthlyCompElement) {
+            const comparisonText = thisMonthEarnings > avgMonthly ? 'Above average' : 
+                                 thisMonthEarnings < avgMonthly ? 'Below average' : 'On target';
+            const comparisonClass = thisMonthEarnings > avgMonthly ? 'positive' : 
+                                  thisMonthEarnings < avgMonthly ? 'negative' : 'neutral';
+            
+            monthlyCompElement.innerHTML = `
+                <div class="comparison-indicator ${comparisonClass}">
+                    <span class="comparison-text">This month: ${comparisonText}</span>
+                </div>
+            `;
+        }
     }
+
+    // Add pulse animation to updated metrics
+    metricCards.forEach((card, index) => {
+        setTimeout(() => {
+            card.classList.add('metric-updated');
+            setTimeout(() => {
+                card.classList.remove('metric-updated');
+            }, 600);
+        }, index * 100);
+    });
 }
 
 function renderRecentInvoices() {
@@ -2767,19 +3025,101 @@ function renderRecentInvoices() {
 
     const recentInvoices = appData.invoices.slice(0, 5);
 
-    tbody.innerHTML = recentInvoices.map(invoice => `
-        <tr>
-            <td><strong>${invoice.id}</strong></td>
-            <td>${invoice.client}</td>
-            <td><strong>₹${formatNumber(invoice.amount)}</strong></td>
-            <td>${formatDate(invoice.date)}</td>
-            <td><span class="status-badge ${invoice.status.toLowerCase()}">${invoice.status}</span></td>
-        </tr>
-    `).join('');
+    if (recentInvoices.length === 0) {
+        tbody.innerHTML = `
+            <tr class="empty-state">
+                <td colspan="5" style="text-align: center; padding: 60px 20px; color: var(--color-text-secondary);">
+                    <div class="empty-state-content">
+                        <div class="empty-icon">📄</div>
+                        <div class="empty-title">No invoices yet</div>
+                        <div class="empty-subtitle">Create your first invoice to get started</div>
+                        <button class="btn btn--primary btn--sm" onclick="document.getElementById('create-invoice-btn').click()" style="margin-top: 16px;">
+                            <span class="btn-icon">➕</span>
+                            Create First Invoice
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `;
+        return;
+    }
+
+    tbody.innerHTML = recentInvoices.map((invoice, index) => {
+        const isOverdue = invoice.status === 'Pending' && new Date(invoice.dueDate) < new Date();
+        const actualStatus = isOverdue ? 'overdue' : invoice.status.toLowerCase();
+        const statusText = isOverdue ? 'Overdue' : invoice.status;
+        
+        return `
+            <tr class="table-row modern" style="animation-delay: ${index * 100}ms">
+                <td>
+                    <div class="invoice-id-cell">
+                        <div class="invoice-number">${invoice.id}</div>
+                        <div class="invoice-date">${formatDate(invoice.date)}</div>
+                    </div>
+                </td>
+                <td>
+                    <div class="client-cell">
+                        <div class="client-name">${invoice.client}</div>
+                        <div class="client-due">Due: ${formatDate(invoice.dueDate)}</div>
+                    </div>
+                </td>
+                <td>
+                    <div class="amount-cell">
+                        <div class="amount-value">₹${formatNumber(invoice.amount)}</div>
+                        <div class="amount-subtitle">${invoice.items?.length || 0} items</div>
+                    </div>
+                </td>
+                <td>
+                    <span class="status-badge modern ${actualStatus}">
+                        <span class="status-dot"></span>
+                        <span class="status-text">${statusText}</span>
+                        ${isOverdue ? '<span class="status-pulse"></span>' : ''}
+                    </span>
+                </td>
+                <td>
+                    <div class="action-buttons compact">
+                        <button class="action-btn view" onclick="viewInvoice('${invoice.id}')" title="View Invoice">
+                            <svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
+                            </svg>
+                        </button>
+                        <button class="action-btn edit" onclick="editInvoice('${invoice.id}')" title="Edit Invoice">
+                            <svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+                            </svg>
+                        </button>
+                        <button class="action-btn download" onclick="downloadInvoice('${invoice.id}')" title="Download PDF">
+                            <svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+                            </svg>
+                        </button>
+                        ${invoice.status === 'Pending' ? `
+                            <button class="action-btn success" onclick="changeInvoiceStatus('${invoice.id}', 'Paid')" title="Mark as Paid">
+                                <svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                                </svg>
+                            </button>
+                        ` : ''}
+                    </div>
+                </td>
+            </tr>
+        `;
+    }).join('');
+
+    // Add entrance animation to rows
+    setTimeout(() => {
+        tbody.querySelectorAll('.table-row').forEach((row, index) => {
+            setTimeout(() => {
+                row.classList.add('row-animate-in');
+            }, index * 150);
+        });
+    }, 200);
 }
 
+// REPLACE YOUR EXISTING renderCharts FUNCTION WITH THIS ENHANCED VERSION
+
 function renderCharts(period = 'monthly') {
-    console.log('Rendering charts for period:', period);
+    console.log('Rendering enhanced charts for period:', period);
 
     let earningsData = appData.monthlyEarnings;
 
@@ -2789,6 +3129,7 @@ function renderCharts(period = 'monthly') {
         earningsData = calculateYearlyEarnings();
     }
 
+    // Enhanced Monthly Chart with modern styling
     const monthlyCtx = document.getElementById('monthlyChart');
     if (monthlyCtx) {
         if (monthlyChart) {
@@ -2802,85 +3143,481 @@ function renderCharts(period = 'monthly') {
                 datasets: [{
                     label: 'Earnings',
                     data: earningsData.map(m => m.amount),
-                    borderColor: '#1FB8CD',
-                    backgroundColor: 'rgba(31, 184, 205, 0.1)',
+                    borderColor: 'rgba(59, 130, 246, 1)',
+                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
                     borderWidth: 3,
                     fill: true,
                     tension: 0.4,
-                    pointBackgroundColor: '#1FB8CD',
+                    pointBackgroundColor: 'rgba(59, 130, 246, 1)',
                     pointBorderColor: '#ffffff',
-                    pointBorderWidth: 2,
-                    pointRadius: 6
+                    pointBorderWidth: 3,
+                    pointRadius: 6,
+                    pointHoverRadius: 8,
+                    pointHoverBackgroundColor: 'rgba(59, 130, 246, 1)',
+                    pointHoverBorderColor: '#ffffff',
+                    pointHoverBorderWidth: 3,
+                    // Add gradient background
+                    borderCapStyle: 'round',
+                    borderJoinStyle: 'round'
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                interaction: {
+                    intersect: false,
+                    mode: 'index'
+                },
                 plugins: {
                     legend: {
                         display: false
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(17, 24, 39, 0.95)',
+                        titleColor: '#ffffff',
+                        bodyColor: '#ffffff',
+                        borderColor: 'rgba(59, 130, 246, 0.5)',
+                        borderWidth: 1,
+                        cornerRadius: 12,
+                        padding: 16,
+                        displayColors: false,
+                        titleFont: {
+                            size: 14,
+                            weight: '600'
+                        },
+                        bodyFont: {
+                            size: 13,
+                            weight: '500'
+                        },
+                        callbacks: {
+                            title: function(context) {
+                                return `Period: ${context[0].label}`;
+                            },
+                            label: function(context) {
+                                return `Revenue: ₹${formatNumber(context.raw)}`;
+                            }
+                        }
                     }
                 },
                 scales: {
                     y: {
                         beginAtZero: true,
+                        border: {
+                            display: false
+                        },
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.05)',
+                            drawBorder: false
+                        },
                         ticks: {
+                            color: '#6b7280',
+                            font: {
+                                size: 12,
+                                weight: '500'
+                            },
+                            padding: 12,
                             callback: function(value) {
                                 return '₹' + formatNumber(value);
                             }
                         }
+                    },
+                    x: {
+                        border: {
+                            display: false
+                        },
+                        grid: {
+                            display: false
+                        },
+                        ticks: {
+                            color: '#6b7280',
+                            font: {
+                                size: 12,
+                                weight: '500'
+                            },
+                            padding: 8
+                        }
+                    }
+                },
+                elements: {
+                    point: {
+                        hoverRadius: 8
+                    }
+                },
+                // Add entrance animation
+                animation: {
+                    duration: 1500,
+                    easing: 'easeInOutQuart'
+                },
+                animations: {
+                    tension: {
+                        duration: 1000,
+                        easing: 'linear',
+                        from: 1,
+                        to: 0.4,
+                        loop: false
                     }
                 }
             }
         });
     }
 
+    // Enhanced Client Chart with modern styling
     const clientCtx = document.getElementById('clientChart');
     if (clientCtx) {
         if (clientChart) {
             clientChart.destroy();
         }
 
-        const colors = ['#1FB8CD', '#FFC185', '#B4413C', '#ECEBD5', '#5D878F', '#DB4545', '#D2BA4C', '#964325'];
+        // Modern color palette
+        const modernColors = [
+            'rgba(59, 130, 246, 0.8)',   // Blue
+            'rgba(16, 185, 129, 0.8)',   // Green
+            'rgba(245, 101, 101, 0.8)',  // Red
+            'rgba(139, 92, 246, 0.8)',   // Purple
+            'rgba(245, 158, 11, 0.8)',   // Orange
+            'rgba(236, 72, 153, 0.8)',   // Pink
+            'rgba(14, 165, 233, 0.8)',   // Sky
+            'rgba(168, 85, 247, 0.8)'    // Violet
+        ];
+
+        const borderColors = [
+            'rgba(59, 130, 246, 1)',
+            'rgba(16, 185, 129, 1)',
+            'rgba(245, 101, 101, 1)',
+            'rgba(139, 92, 246, 1)',
+            'rgba(245, 158, 11, 1)',
+            'rgba(236, 72, 153, 1)',
+            'rgba(14, 165, 233, 1)',
+            'rgba(168, 85, 247, 1)'
+        ];
 
         clientChart = new Chart(clientCtx, {
-            type: 'pie',
+            type: 'doughnut',
             data: {
                 labels: appData.clients.map(c => c.name),
                 datasets: [{
                     data: appData.clients.map(c => c.total_amount || 0),
-                    backgroundColor: colors,
-                    borderWidth: 2,
-                    borderColor: '#ffffff'
+                    backgroundColor: modernColors,
+                    borderColor: borderColors,
+                    borderWidth: 3,
+                    borderRadius: 4,
+                    spacing: 2,
+                    hoverBorderWidth: 4,
+                    hoverOffset: 8
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                cutout: '65%',
                 plugins: {
                     legend: {
                         position: 'bottom',
                         labels: {
                             padding: 20,
-                            usePointStyle: true
+                            usePointStyle: true,
+                            pointStyle: 'circle',
+                            font: {
+                                size: 12,
+                                weight: '500'
+                            },
+                            color: '#374151',
+                            generateLabels: function(chart) {
+                                const data = chart.data;
+                                if (data.labels.length && data.datasets.length) {
+                                    return data.labels.map((label, i) => {
+                                        const value = data.datasets[0].data[i];
+                                        const total = data.datasets[0].data.reduce((a, b) => a + b, 0);
+                                        const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                                        
+                                        return {
+                                            text: `${label} (${percentage}%)`,
+                                            fillStyle: data.datasets[0].backgroundColor[i],
+                                            strokeStyle: data.datasets[0].borderColor[i],
+                                            lineWidth: 2,
+                                            hidden: false,
+                                            index: i
+                                        };
+                                    });
+                                }
+                                return [];
+                            }
                         }
                     },
                     tooltip: {
+                        backgroundColor: 'rgba(17, 24, 39, 0.95)',
+                        titleColor: '#ffffff',
+                        bodyColor: '#ffffff',
+                        borderColor: 'rgba(59, 130, 246, 0.5)',
+                        borderWidth: 1,
+                        cornerRadius: 12,
+                        padding: 16,
+                        displayColors: true,
+                        titleFont: {
+                            size: 14,
+                            weight: '600'
+                        },
+                        bodyFont: {
+                            size: 13,
+                            weight: '500'
+                        },
                         callbacks: {
+                            title: function(context) {
+                                return context[0].label;
+                            },
                             label: function(context) {
                                 const label = context.label || '';
                                 const value = context.raw;
                                 const total = context.dataset.data.reduce((a, b) => a + b, 0);
                                 const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
-                                return `${label}: ₹${formatNumber(value)} (${percentage}%)`;
+                                return [
+                                    `Revenue: ₹${formatNumber(value)}`,
+                                    `Share: ${percentage}%`
+                                ];
                             }
                         }
                     }
+                },
+                // Add entrance animation
+                animation: {
+                    duration: 1500,
+                    easing: 'easeInOutQuart'
+                },
+                animations: {
+                    rotate: {
+                        duration: 1200,
+                        easing: 'easeInOutQuart'
+                    },
+                    scale: {
+                        duration: 800,
+                        easing: 'easeInOutQuart'
+                    }
+                },
+                onHover: (event, activeElements) => {
+                    event.native.target.style.cursor = activeElements.length ? 'pointer' : 'default';
                 }
             }
         });
     }
+
+    // Add chart containers animation
+    setTimeout(() => {
+        const chartContainers = document.querySelectorAll('.chart-container');
+        chartContainers.forEach((container, index) => {
+            setTimeout(() => {
+                container.classList.add('chart-animate-in');
+            }, index * 200);
+        });
+    }, 300);
 }
+
+    // Enhanced Client Chart with modern colors and animations
+    const clientCtx = document.getElementById('clientChart');
+    if (clientCtx) {
+        if (clientChart) {
+            clientChart.destroy();
+        }
+
+        // Modern gradient colors
+        const modernColors = [
+            'rgba(59, 130, 246, 0.8)',   // Blue
+            'rgba(16, 185, 129, 0.8)',   // Green
+            'rgba(245, 101, 101, 0.8)',  // Red
+            'rgba(139, 92, 246, 0.8)',   // Purple
+            'rgba(245, 158, 11, 0.8)',   // Orange
+            'rgba(236, 72, 153, 0.8)',   // Pink
+            'rgba(14, 165, 233, 0.8)',   // Sky
+            'rgba(168, 85, 247, 0.8)'    // Violet
+        ];
+
+        const borderColors = [
+            'rgba(59, 130, 246, 1)',
+            'rgba(16, 185, 129, 1)',
+            'rgba(245, 101, 101, 1)',
+            'rgba(139, 92, 246, 1)',
+            'rgba(245, 158, 11, 1)',
+            'rgba(236, 72, 153, 1)',
+            'rgba(14, 165, 233, 1)',
+            'rgba(168, 85, 247, 1)'
+        ];
+
+        clientChart = new Chart(clientCtx, {
+            type: 'doughnut',
+            data: {
+                labels: appData.clients.map(c => c.name),
+                datasets: [{
+                    data: appData.clients.map(c => c.total_amount || 0),
+                    backgroundColor: modernColors,
+                    borderColor: borderColors,
+                    borderWidth: 3,
+                    borderRadius: 6,
+                    spacing: 3,
+                    hoverBorderWidth: 4,
+                    hoverOffset: 10
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '65%',
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            padding: 25,
+                            usePointStyle: true,
+                            pointStyle: 'circle',
+                            font: {
+                                size: 12,
+                                weight: '500'
+                            },
+                            color: '#374151',
+                            generateLabels: function(chart) {
+                                const data = chart.data;
+                                if (data.labels.length && data.datasets.length) {
+                                    return data.labels.map((label, i) => {
+                                        const value = data.datasets[0].data[i];
+                                        const total = data.datasets[0].data.reduce((a, b) => a + b, 0);
+                                        const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                                        
+                                        return {
+                                            text: `${label} (${percentage}%)`,
+                                            fillStyle: data.datasets[0].backgroundColor[i],
+                                            strokeStyle: data.datasets[0].borderColor[i],
+                                            lineWidth: 2,
+                                            hidden: false,
+                                            index: i
+                                        };
+                                    });
+                                }
+                                return [];
+                            }
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(17, 24, 39, 0.95)',
+                        titleColor: '#ffffff',
+                        bodyColor: '#ffffff',
+                        borderColor: 'rgba(59, 130, 246, 0.5)',
+                        borderWidth: 1,
+                        cornerRadius: 12,
+                        padding: 16,
+                        displayColors: true,
+                        titleFont: {
+                            size: 14,
+                            weight: '600'
+                        },
+                        bodyFont: {
+                            size: 13,
+                            weight: '500'
+                        },
+                        callbacks: {
+                            title: function(context) {
+                                return context[0].label;
+                            },
+                            label: function(context) {
+                                const value = context.raw;
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                                return [
+                                    `Revenue: ₹${formatNumber(value)}`,
+                                    `Share: ${percentage}%`
+                                ];
+                            }
+                        }
+                    }
+                },
+                animation: {
+                    duration: 2000,
+                    easing: 'easeInOutQuart'
+                },
+                animations: {
+                    rotate: {
+                        duration: 1500,
+                        easing: 'easeInOutQuart'
+                    },
+                    scale: {
+                        duration: 1000,
+                        easing: 'easeInOutQuart'
+                    }
+                },
+                onHover: (event, activeElements) => {
+                    event.native.target.style.cursor = activeElements.length ? 'pointer' : 'default';
+                }
+            }
+        });
+    }
+
+    // Add chart containers animation
+    setTimeout(() => {
+        const chartContainers = document.querySelectorAll('.chart-container');
+        chartContainers.forEach((container, index) => {
+            setTimeout(() => {
+                container.classList.add('chart-animate-in');
+            }, index * 300);
+        });
+    }, 500);
+}
+
+// Helper function to animate number changes
+function animateNumberChange(element, targetValue, prefix = '') {
+    const startValue = parseFloat(element.textContent.replace(/[₹,]/g, '')) || 0;
+    const duration = 1000;
+    const startTime = performance.now();
+    
+    function updateNumber(currentTime) {
+        const elapsed = currentTime - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        
+        // Easing function for smooth animation
+        const easeOutQuart = 1 - Math.pow(1 - progress, 4);
+        const currentValue = startValue + (targetValue - startValue) * easeOutQuart;
+        
+        if (prefix === '₹') {
+            element.textContent = `₹${formatNumber(Math.round(currentValue))}`;
+        } else {
+            element.textContent = Math.round(currentValue);
+        }
+        
+        if (progress < 1) {
+            requestAnimationFrame(updateNumber);
+        }
+    }
+    
+    requestAnimationFrame(updateNumber);
+}
+
+// Helper function to show welcome message for new users
+function showWelcomeMessage() {
+    const welcomeShown = localStorage.getItem('welcomeShown');
+    if (!welcomeShown) {
+        setTimeout(() => {
+            showToast('Welcome to Invoice Manager! Create your first invoice to get started.', 'info', 6000);
+            localStorage.setItem('welcomeShown', 'true');
+        }, 1000);
+    }
+}
+
+// Animation utilities object (if not already defined)
+const animationUtils = {
+    fadeIn: (element, duration = 300) => {
+        element.style.opacity = '0';
+        element.style.transform = 'translateY(20px)';
+        element.style.transition = `all ${duration}ms ease-out`;
+        
+        setTimeout(() => {
+            element.style.opacity = '1';
+            element.style.transform = 'translateY(0)';
+        }, 10);
+    },
+    
+    pulse: (element) => {
+        element.classList.add('pulse-animate');
+        setTimeout(() => {
+            element.classList.remove('pulse-animate');
+        }, 600);
+    }
+};
 
 function setupAnalyticsFilters() {
     console.log('Analytics filters setup complete');
@@ -3831,11 +4568,20 @@ function setupModals() {
     }
 }
 
+// REPLACE YOUR EXISTING openInvoiceModal AND openClientModal FUNCTIONS
+
 async function openInvoiceModal(invoiceId = null) {
-    console.log('Opening invoice modal...', invoiceId ? 'for editing' : 'for creation');
+    console.log('Opening enhanced invoice modal...', invoiceId ? 'for editing' : 'for creation');
     const modal = document.getElementById('invoice-modal');
     if (modal) {
+        // Add modern modal entrance animation
         modal.classList.remove('hidden');
+        modal.classList.add('modal-entrance');
+        
+        // Remove animation class after animation completes
+        setTimeout(() => {
+            modal.classList.remove('modal-entrance');
+        }, 300);
 
         editingInvoiceId = invoiceId;
 
@@ -3843,18 +4589,37 @@ async function openInvoiceModal(invoiceId = null) {
             // EDITING EXISTING INVOICE
             const invoice = appData.invoices.find(inv => inv.id === invoiceId);
             if (invoice) {
-                // Update modal title
+                // Update modal title with modern styling
                 const modalTitle = document.getElementById('invoice-modal-title');
-                if (modalTitle) modalTitle.textContent = 'Edit Invoice';
+                if (modalTitle) {
+                    modalTitle.innerHTML = `
+                        <div class="modal-title-content">
+                            <span class="modal-icon">✏️</span>
+                            <span>Edit Invoice</span>
+                            <span class="invoice-status-indicator ${invoice.status.toLowerCase()}">${invoice.status}</span>
+                        </div>
+                    `;
+                }
 
-                // Populate form fields
+                // Populate form fields with enhanced UX
                 const invoiceNumInput = document.getElementById('invoice-number');
                 if (invoiceNumInput) {
                     invoiceNumInput.value = invoice.id;
-                    invoiceNumInput.removeAttribute('readonly'); // Ensure editable
+                    invoiceNumInput.removeAttribute('readonly');
+                    invoiceNumInput.classList.add('field-populated');
                 }
-                document.getElementById('issue-date').value = invoice.date;
-                document.getElementById('due-date').value = invoice.dueDate;
+                
+                const issueDateField = document.getElementById('issue-date');
+                const dueDateField = document.getElementById('due-date');
+                
+                if (issueDateField) {
+                    issueDateField.value = invoice.date;
+                    issueDateField.classList.add('field-populated');
+                }
+                if (dueDateField) {
+                    dueDateField.value = invoice.dueDate;
+                    dueDateField.classList.add('field-populated');
+                }
 
                 const clientSelect = document.getElementById('invoice-client');
                 if (clientSelect) {
@@ -3862,33 +4627,48 @@ async function openInvoiceModal(invoiceId = null) {
                         appData.clients.map(client =>
                             `<option value="${client.id}" ${client.id === invoice.clientId ? 'selected' : ''}>${client.name}</option>`
                         ).join('');
+                    clientSelect.classList.add('field-populated');
                 }
 
                 const container = document.getElementById('line-items-container');
                 container.innerHTML = '';
 
                 if (invoice.items && invoice.items.length > 0) {
-                    invoice.items.forEach(item => {
+                    invoice.items.forEach((item, index) => {
                         const lineItem = document.createElement('div');
-                        lineItem.className = 'line-item';
+                        lineItem.className = 'line-item modern';
+                        lineItem.style.animationDelay = `${index * 100}ms`;
                         lineItem.innerHTML = `
+                            <div class="line-item-header">
+                                <span class="line-item-number">#${index + 1}</span>
+                                <button type="button" class="btn btn--ghost btn--sm remove-item" title="Remove item">
+                                    <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                                    </svg>
+                                </button>
+                            </div>
                             <div class="form-row">
                                 <div class="form-group flex-2">
-                                    <input type="text" class="form-control" placeholder="Description" value="${item.description}" required>
+                                    <input type="text" class="form-control modern" placeholder="Description" value="${item.description}" required>
                                 </div>
                                 <div class="form-group">
-                                    <input type="number" class="form-control quantity" placeholder="Qty" min="1" value="${item.quantity}" required>
+                                    <input type="number" class="form-control modern quantity" placeholder="Qty" min="1" value="${item.quantity}" required>
                                 </div>
                                 <div class="form-group">
-                                    <input type="number" class="form-control rate" placeholder="Rate" min="0" step="0.01" value="${item.rate}" required>
+                                    <input type="number" class="form-control modern rate" placeholder="Rate" min="0" step="0.01" value="${item.rate}" required>
                                 </div>
                                 <div class="form-group">
-                                    <input type="number" class="form-control amount" placeholder="Amount" value="${item.amount}" readonly>
+                                    <input type="number" class="form-control modern amount" placeholder="Amount" value="${item.amount}" readonly>
                                 </div>
-                                <button type="button" class="btn btn--secondary remove-item">Remove</button>
                             </div>
                         `;
                         container.appendChild(lineItem);
+                        
+                        // Add entrance animation
+                        setTimeout(() => {
+                            lineItem.classList.add('line-item-enter');
+                        }, index * 100);
+                        
                         // Attach input listeners for live calculation
                         const quantityInput = lineItem.querySelector('.quantity');
                         const rateInput = lineItem.querySelector('.rate');
@@ -3899,27 +4679,29 @@ async function openInvoiceModal(invoiceId = null) {
                     addLineItem();
                 }
 
-                // FIXED: Update modal footer buttons for editing
+                // Enhanced modal footer for editing
                 const modalFooter = document.querySelector('#invoice-modal .modal-footer');
                 if (modalFooter) {
                     modalFooter.innerHTML = `
-                        <div style="display: flex; gap: 12px; align-items: center; width: 100%;">
-                            <!-- Status Selector -->
-                            <div class="form-group" style="margin: 0; min-width: 150px;">
-                                <label class="form-label" style="font-size: 12px; margin-bottom: 4px; color: #666;">Change Status:</label>
-                                <select class="form-control" id="invoice-status-select" style="padding: 8px; font-size: 13px;">
-                                    <option value="Draft" ${invoice.status === 'Draft' ? 'selected' : ''}>Draft</option>
-                                    <option value="Pending" ${invoice.status === 'Pending' ? 'selected' : ''}>Pending</option>
-                                    <option value="Paid" ${invoice.status === 'Paid' ? 'selected' : ''}>Paid</option>
-                                    <option value="Overdue" ${invoice.status === 'Overdue' ? 'selected' : ''}>Overdue</option>
-                                    <option value="Cancelled" ${invoice.status === 'Cancelled' ? 'selected' : ''}>Cancelled</option>
+                        <div class="modal-footer-content">
+                            <div class="status-selector">
+                                <label class="form-label modern">Status:</label>
+                                <select class="form-control modern" id="invoice-status-select">
+                                    <option value="Draft" ${invoice.status === 'Draft' ? 'selected' : ''}>📝 Draft</option>
+                                    <option value="Pending" ${invoice.status === 'Pending' ? 'selected' : ''}>⏳ Pending</option>
+                                    <option value="Paid" ${invoice.status === 'Paid' ? 'selected' : ''}>✅ Paid</option>
+                                    <option value="Overdue" ${invoice.status === 'Overdue' ? 'selected' : ''}>⚠️ Overdue</option>
+                                    <option value="Cancelled" ${invoice.status === 'Cancelled' ? 'selected' : ''}>❌ Cancelled</option>
                                 </select>
                             </div>
-                            
-                            <!-- Action Buttons -->
-                            <div style="display: flex; gap: 8px; margin-left: auto;">
-                                <button type="button" class="btn btn--secondary" onclick="closeModal(document.getElementById('invoice-modal'))">Cancel</button>
-                                <button type="button" class="btn btn--primary" id="update-invoice">Update Invoice</button>
+                            <div class="action-buttons">
+                                <button type="button" class="btn btn--secondary modern" onclick="closeModal(document.getElementById('invoice-modal'))">
+                                    Cancel
+                                </button>
+                                <button type="button" class="btn btn--primary modern" id="update-invoice">
+                                    <span class="btn-icon">💾</span>
+                                    Update Invoice
+                                </button>
                             </div>
                         </div>
                     `;
@@ -3931,7 +4713,21 @@ async function openInvoiceModal(invoiceId = null) {
                             updateBtn.addEventListener('click', () => {
                                 const statusSelect = document.getElementById('invoice-status-select');
                                 const selectedStatus = statusSelect ? statusSelect.value : invoice.status;
-                                saveInvoice(selectedStatus);
+                                
+                                // Add loading state to button
+                                updateBtn.innerHTML = `
+                                    <span class="btn-spinner"></span>
+                                    Updating...
+                                `;
+                                updateBtn.disabled = true;
+                                
+                                saveInvoice(selectedStatus).finally(() => {
+                                    updateBtn.innerHTML = `
+                                        <span class="btn-icon">💾</span>
+                                        Update Invoice
+                                    `;
+                                    updateBtn.disabled = false;
+                                });
                             });
                         }
                     }, 100);
@@ -3946,20 +4742,29 @@ async function openInvoiceModal(invoiceId = null) {
                 const invoiceNumInput = document.getElementById('invoice-number');
                 if (invoiceNumInput) {
                     invoiceNumInput.value = `${appData.settings.invoicePrefix}-${String(num).padStart(3, '0')}`;
-                    invoiceNumInput.removeAttribute('readonly'); // Ensure editable
+                    invoiceNumInput.removeAttribute('readonly');
+                    invoiceNumInput.classList.add('field-generated');
                 }
             } catch (error) {
                 console.error('Error generating invoice number:', error);
                 const invoiceNumInput = document.getElementById('invoice-number');
                 if (invoiceNumInput) {
                     invoiceNumInput.value = `${appData.settings.invoicePrefix}-${String(Date.now()).slice(-3)}`;
-                    invoiceNumInput.removeAttribute('readonly'); // Ensure editable
+                    invoiceNumInput.removeAttribute('readonly');
                 }
             }
 
-            // Update modal title
+            // Update modal title for creation
             const modalTitle = document.getElementById('invoice-modal-title');
-            if (modalTitle) modalTitle.textContent = 'Create New Invoice';
+            if (modalTitle) {
+                modalTitle.innerHTML = `
+                    <div class="modal-title-content">
+                        <span class="modal-icon">➕</span>
+                        <span>Create New Invoice</span>
+                        <span class="new-badge">New</span>
+                    </div>
+                `;
+            }
 
             const today = new Date().toISOString().split('T')[0];
             const dueDate = new Date();
@@ -3968,8 +4773,14 @@ async function openInvoiceModal(invoiceId = null) {
             const issueDateField = document.getElementById('issue-date');
             const dueDateField = document.getElementById('due-date');
 
-            if (issueDateField) issueDateField.value = today;
-            if (dueDateField) dueDateField.value = dueDate.toISOString().split('T')[0];
+            if (issueDateField) {
+                issueDateField.value = today;
+                issueDateField.classList.add('field-auto-filled');
+            }
+            if (dueDateField) {
+                dueDateField.value = dueDate.toISOString().split('T')[0];
+                dueDateField.classList.add('field-auto-filled');
+            }
 
             const clientSelect = document.getElementById('invoice-client');
             if (clientSelect) {
@@ -3981,12 +4792,22 @@ async function openInvoiceModal(invoiceId = null) {
             container.innerHTML = '';
             addLineItem();
 
-            // FIXED: Reset modal footer buttons for creating
+            // Reset modal footer for creation
             const modalFooter = document.querySelector('#invoice-modal .modal-footer');
             if (modalFooter) {
                 modalFooter.innerHTML = `
-                    <button type="button" class="btn btn--secondary" id="save-draft">Save as Draft</button>
-                    <button type="submit" class="btn btn--primary" id="save-invoice">Create Invoice</button>
+                    <div class="modal-footer-content">
+                        <div class="action-buttons">
+                            <button type="button" class="btn btn--secondary modern" id="save-draft">
+                                <span class="btn-icon">📄</span>
+                                Save as Draft
+                            </button>
+                            <button type="submit" class="btn btn--primary modern" id="save-invoice">
+                                <span class="btn-icon">✨</span>
+                                Create Invoice
+                            </button>
+                        </div>
+                    </div>
                 `;
 
                 // Re-setup event listeners for new buttons
@@ -3995,11 +4816,25 @@ async function openInvoiceModal(invoiceId = null) {
                     const saveInvoiceBtn = document.getElementById('save-invoice');
 
                     if (saveDraftBtn) {
-                        saveDraftBtn.addEventListener('click', () => saveInvoice('Draft'));
+                        saveDraftBtn.addEventListener('click', () => {
+                            saveDraftBtn.innerHTML = `<span class="btn-spinner"></span>Saving...`;
+                            saveDraftBtn.disabled = true;
+                            saveInvoice('Draft').finally(() => {
+                                saveDraftBtn.innerHTML = `<span class="btn-icon">📄</span>Save as Draft`;
+                                saveDraftBtn.disabled = false;
+                            });
+                        });
                     }
 
                     if (saveInvoiceBtn) {
-                        saveInvoiceBtn.addEventListener('click', () => saveInvoice('Pending'));
+                        saveInvoiceBtn.addEventListener('click', () => {
+                            saveInvoiceBtn.innerHTML = `<span class="btn-spinner"></span>Creating...`;
+                            saveInvoiceBtn.disabled = true;
+                            saveInvoice('Pending').finally(() => {
+                                saveInvoiceBtn.innerHTML = `<span class="btn-icon">✨</span>Create Invoice`;
+                                saveInvoiceBtn.disabled = false;
+                            });
+                        });
                     }
                 }, 100);
             }
@@ -4008,46 +4843,118 @@ async function openInvoiceModal(invoiceId = null) {
 }
 
 function openClientModal() {
-    console.log('Opening client modal...');
+    console.log('Opening enhanced client modal...');
     const modal = document.getElementById('client-modal');
     if (modal) {
+        // Add modern modal entrance animation
         modal.classList.remove('hidden');
+        modal.classList.add('modal-entrance');
+        
+        // Remove animation class after animation completes
+        setTimeout(() => {
+            modal.classList.remove('modal-entrance');
+        }, 300);
 
         if (!editingClientId) {
             const form = document.getElementById('client-form');
             if (form) {
                 form.reset();
+                
+                // Remove any previous field states
+                form.querySelectorAll('.form-control').forEach(field => {
+                    field.classList.remove('field-populated', 'field-generated', 'field-auto-filled');
+                });
             }
 
             const modalTitle = document.querySelector('#client-modal .modal-header h2');
-            if (modalTitle) modalTitle.textContent = 'Add New Client';
+            if (modalTitle) {
+                modalTitle.innerHTML = `
+                    <div class="modal-title-content">
+                        <span class="modal-icon">👤</span>
+                        <span>Add New Client</span>
+                        <span class="new-badge">New</span>
+                    </div>
+                `;
+            }
 
             const saveBtn = document.getElementById('save-client');
-            if (saveBtn) saveBtn.textContent = 'Save Client';
-        }
-    }
-}
-
-function closeModal(modal) {
-    if (modal) {
-        modal.classList.add('hidden');
-        editingInvoiceId = null;
-        editingClientId = null;
-        
-        // Reset modal footer to default when closing
-        const invoiceModal = document.getElementById('invoice-modal');
-        if (modal === invoiceModal) {
-            const modalFooter = document.querySelector('#invoice-modal .modal-footer');
-            if (modalFooter) {
-                modalFooter.innerHTML = `
-                    <button type="button" class="btn btn--secondary" id="save-draft">Save as Draft</button>
-                    <button type="submit" class="btn btn--primary" id="save-invoice">Create Invoice</button>
+            if (saveBtn) {
+                saveBtn.innerHTML = `
+                    <span class="btn-icon">💾</span>
+                    Save Client
+                `;
+                saveBtn.className = 'btn btn--primary modern';
+            }
+        } else {
+            // For editing, the title and button will be updated in editClient function
+            const modalTitle = document.querySelector('#client-modal .modal-header h2');
+            if (modalTitle) {
+                modalTitle.innerHTML = `
+                    <div class="modal-title-content">
+                        <span class="modal-icon">✏️</span>
+                        <span>Edit Client</span>
+                        <span class="edit-badge">Edit</span>
+                    </div>
                 `;
             }
         }
     }
 }
 
+// ENHANCED: Close modal with exit animation
+function closeModal(modal) {
+    if (modal) {
+        // Add exit animation
+        modal.classList.add('modal-exit');
+        
+        // Hide modal after animation
+        setTimeout(() => {
+            modal.classList.add('hidden');
+            modal.classList.remove('modal-exit', 'modal-entrance');
+            
+            // Reset editing states
+            editingInvoiceId = null;
+            editingClientId = null;
+            
+            // Reset modal titles and buttons to default
+            if (modal.id === 'invoice-modal') {
+                const modalTitle = document.getElementById('invoice-modal-title');
+                if (modalTitle) {
+                    modalTitle.innerHTML = 'Create New Invoice';
+                }
+                
+                const modalFooter = document.querySelector('#invoice-modal .modal-footer');
+                if (modalFooter) {
+                    modalFooter.innerHTML = `
+                        <button type="button" class="btn btn--secondary modern" id="save-draft">
+                            <span class="btn-icon">📄</span>
+                            Save as Draft
+                        </button>
+                        <button type="submit" class="btn btn--primary modern" id="save-invoice">
+                            <span class="btn-icon">✨</span>
+                            Create Invoice
+                        </button>
+                    `;
+                }
+                
+                // Clear form fields
+                const form = document.getElementById('invoice-form');
+                if (form) {
+                    form.querySelectorAll('.form-control').forEach(field => {
+                        field.classList.remove('field-populated', 'field-generated', 'field-auto-filled');
+                    });
+                }
+            }
+            
+            if (modal.id === 'client-modal') {
+                const modalTitle = document.querySelector('#client-modal .modal-header h2');
+                if (modalTitle) {
+                    modalTitle.innerHTML = 'Add New Client';
+                }
+            }
+        }, 300);
+    }
+}
 function setupForms() {
     console.log('Setting up forms...');
     setupInvoiceForm();
@@ -5223,245 +6130,349 @@ function formatDate(dateString) {
     }
 }
 
-// ENHANCED: Toast notifications with better positioning and animations
-function showToast(message, type = 'info') {
-    console.log('Toast:', type, message);
+// REPLACE YOUR EXISTING showToast FUNCTION AND ADD THESE ENHANCED FUNCTIONS
+
+// ENHANCED: Modern toast notification system
+function showToast(message, type = 'info', duration = 4000) {
+    console.log('Enhanced Toast:', type, message);
 
     let container = document.getElementById('toast-container');
     if (!container) {
         container = document.createElement('div');
         container.id = 'toast-container';
-        container.className = 'toast-container';
+        container.className = 'toast-container modern';
         document.body.appendChild(container);
     }
 
     const toast = document.createElement('div');
-    toast.className = `toast ${type}`;
+    toast.className = `toast modern ${type}`;
 
-    // Add icon based on type
+    // Add enhanced icons and animations
     const icons = {
-        success: '✅',
-        error: '❌',
-        warning: '⚠️',
-        info: 'ℹ️'
+        success: `<svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                  </svg>`,
+        error: `<svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                </svg>`,
+        warning: `<svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/>
+                  </svg>`,
+        info: `<svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
+                 <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
+               </svg>`
     };
 
     toast.innerHTML = `
-        <div style="display: flex; align-items: center; gap: 8px;">
-            <span style="font-size: 16px;">${icons[type] || icons.info}</span>
-            <span>${message}</span>
+        <div class="toast-content">
+            <div class="toast-icon ${type}">
+                ${icons[type] || icons.info}
+            </div>
+            <div class="toast-message">
+                ${message}
+            </div>
+            <button class="toast-close" onclick="this.closest('.toast').remove()">
+                <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                </svg>
+            </button>
         </div>
+        <div class="toast-progress"></div>
     `;
-
-    // Enhanced toast styles
-    if (!document.getElementById('enhanced-toast-styles')) {
-        const style = document.createElement('style');
-        style.id = 'enhanced-toast-styles';
-        style.textContent = `
-            .toast-container {
-                position: fixed;
-                top: 20px;
-                right: 20px;
-                z-index: 10000;
-                display: flex;
-                flex-direction: column;
-                gap: 8px;
-                max-width: 400px;
-            }
-
-            .toast {
-                background: var(--color-surface);
-                color: var(--color-text);
-                padding: 16px 20px;
-                border-radius: 12px;
-                box-shadow: 0 10px 30px rgba(0,0,0,0.15);
-                border-left: 4px solid var(--color-primary);
-                min-width: 300px;
-                animation: slideInRight 0.3s ease-out;
-                backdrop-filter: blur(10px);
-                border: 1px solid var(--color-border);
-                font-weight: 500;
-                font-size: 14px;
-                position: relative;
-                overflow: hidden;
-            }
-
-            .toast::before {
-                content: '';
-                position: absolute;
-                top: 0;
-                left: 0;
-                right: 0;
-                height: 2px;
-                background: linear-gradient(90deg, transparent, var(--color-primary), transparent);
-                animation: shimmer 2s ease-in-out infinite;
-            }
-
-            .toast.success {
-                border-left-color: var(--color-success);
-                background: rgba(var(--color-success-rgb), 0.05);
-            }
-
-            .toast.success::before {
-                background: linear-gradient(90deg, transparent, var(--color-success), transparent);
-            }
-
-            .toast.error {
-                border-left-color: var(--color-error);
-                background: rgba(var(--color-error-rgb), 0.05);
-            }
-
-            .toast.error::before {
-                background: linear-gradient(90deg, transparent, var(--color-error), transparent);
-            }
-
-            .toast.warning {
-                border-left-color: var(--color-warning);
-                background: rgba(var(--color-warning-rgb), 0.05);
-            }
-
-            .toast.warning::before {
-                background: linear-gradient(90deg, transparent, var(--color-warning), transparent);
-            }
-
-            @keyframes slideInRight {
-                from {
-                    transform: translateX(100%);
-                    opacity: 0;
-                }
-                to {
-                    transform: translateX(0);
-                    opacity: 1;
-                }
-            }
-
-            @keyframes shimmer {
-                0%, 100% { opacity: 0; }
-                50% { opacity: 1; }
-            }
-
-            @keyframes slideOutRight {
-                from {
-                    transform: translateX(0);
-                    opacity: 1;
-                }
-                to {
-                    transform: translateX(100%);
-                    opacity: 0;
-                }
-            }
-
-            .toast.removing {
-                animation: slideOutRight 0.3s ease-in-out forwards;
-            }
-
-            @media (max-width: 480px) {
-                .toast-container {
-                    left: 10px;
-                    right: 10px;
-                    top: 10px;
-                    max-width: none;
-                }
-
-                .toast {
-                    min-width: auto;
-                    font-size: 13px;
-                    padding: 12px 16px;
-                }
-            }
-        `;
-        document.head.appendChild(style);
-    }
 
     container.appendChild(toast);
 
-    // Auto remove with animation
+    // Add entrance animation
     setTimeout(() => {
-        if (toast.parentNode) {
-            toast.classList.add('removing');
-            setTimeout(() => {
-                if (toast.parentNode) {
-                    toast.remove();
-                }
-            }, 300);
-        }
-    }, 4000);
+        toast.classList.add('toast-enter');
+    }, 10);
+
+    // Progress bar animation
+    const progressBar = toast.querySelector('.toast-progress');
+    if (progressBar) {
+        progressBar.style.animationDuration = `${duration}ms`;
+        progressBar.classList.add('progress-animate');
+    }
+
+    // Auto remove with exit animation
+    const autoRemoveTimer = setTimeout(() => {
+        removeToast(toast);
+    }, duration);
 
     // Click to dismiss
-    toast.addEventListener('click', () => {
-        if (toast.parentNode) {
-            toast.classList.add('removing');
-            setTimeout(() => {
-                if (toast.parentNode) {
-                    toast.remove();
-                }
-            }, 300);
+    toast.addEventListener('click', (e) => {
+        if (e.target.closest('.toast-close')) {
+            clearTimeout(autoRemoveTimer);
+            removeToast(toast);
+        }
+    });
+
+    // Pause on hover
+    toast.addEventListener('mouseenter', () => {
+        progressBar.style.animationPlayState = 'paused';
+    });
+
+    toast.addEventListener('mouseleave', () => {
+        progressBar.style.animationPlayState = 'running';
+    });
+}
+
+function removeToast(toast) {
+    if (toast && toast.parentNode) {
+        toast.classList.add('toast-exit');
+        setTimeout(() => {
+            if (toast.parentNode) {
+                toast.remove();
+            }
+        }, 300);
+    }
+}
+
+// ENHANCED: Line item functions with modern styling
+function addLineItem() {
+    const container = document.getElementById('line-items-container');
+    if (container) {
+        const itemCount = container.children.length;
+        const lineItem = document.createElement('div');
+        lineItem.className = 'line-item modern';
+        lineItem.style.animationDelay = `${itemCount * 100}ms`;
+        
+        lineItem.innerHTML = `
+            <div class="line-item-header">
+                <span class="line-item-number">#${itemCount + 1}</span>
+                <button type="button" class="btn btn--ghost btn--sm remove-item" title="Remove item">
+                    <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="form-row">
+                <div class="form-group flex-2">
+                    <input type="text" class="form-control modern" placeholder="Description" required>
+                    <label class="floating-label">Description</label>
+                </div>
+                <div class="form-group">
+                    <input type="number" class="form-control modern quantity" placeholder="1" min="1" value="1" required>
+                    <label class="floating-label">Qty</label>
+                </div>
+                <div class="form-group">
+                    <input type="number" class="form-control modern rate" placeholder="0.00" min="0" step="0.01" required>
+                    <label class="floating-label">Rate</label>
+                </div>
+                <div class="form-group">
+                    <input type="number" class="form-control modern amount" placeholder="0.00" readonly>
+                    <label class="floating-label">Amount</label>
+                </div>
+            </div>
+        `;
+        
+        container.appendChild(lineItem);
+        
+        // Add entrance animation
+        setTimeout(() => {
+            lineItem.classList.add('line-item-enter');
+        }, 100);
+        
+        // Update line item numbers
+        updateLineItemNumbers();
+        
+        console.log('Enhanced line item added');
+    }
+}
+
+function updateLineItemNumbers() {
+    const lineItems = document.querySelectorAll('.line-item');
+    lineItems.forEach((item, index) => {
+        const numberElement = item.querySelector('.line-item-number');
+        if (numberElement) {
+            numberElement.textContent = `#${index + 1}`;
         }
     });
 }
 
-// Global error handler for better debugging
-window.addEventListener('error', (event) => {
-    console.error('Global error caught:', event.error);
-    showToast('An unexpected error occurred. Check console for details.', 'error');
-});
+// ENHANCED: Add logout button with modern styling
+function addLogoutButton() {
+    const sidebarHeader = document.querySelector('.sidebar-header');
+    if (sidebarHeader && !document.getElementById('logout-btn')) {
+        const username = localStorage.getItem('username') || 'User';
+        
+        // Create user info section
+        const userSection = document.createElement('div');
+        userSection.className = 'user-section';
+        userSection.innerHTML = `
+            <div class="user-avatar">
+                <span class="user-initial">${username.charAt(0).toUpperCase()}</span>
+            </div>
+            <div class="user-info">
+                <div class="user-name">${username}</div>
+                <div class="user-role">Administrator</div>
+            </div>
+            <button class="logout-btn" id="logout-btn" onclick="logout()" title="Logout">
+                <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.59L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/>
+                </svg>
+            </button>
+        `;
+        
+        sidebarHeader.appendChild(userSection);
+    }
+}
 
-window.addEventListener('unhandledrejection', (event) => {
-    console.error('Unhandled promise rejection:', event.reason);
-    showToast('A network or database error occurred. Please try again.', 'error');
-});
-
-// Performance monitoring
-const performanceMonitor = {
-    startTime: Date.now(),
-
-    logTiming(label) {
-        const currentTime = Date.now();
-        const elapsed = currentTime - this.startTime;
-        console.log(`⏱️ ${label}: ${elapsed}ms`);
-    },
-
-    logMemory() {
-        if (performance.memory) {
-            console.log('💾 Memory Usage:', {
-                used: Math.round(performance.memory.usedJSHeapSize / 1024 / 1024) + 'MB',
-                total: Math.round(performance.memory.totalJSHeapSize / 1024 / 1024) + 'MB'
-            });
+// ENHANCED: Loading state with modern spinner
+function showLoadingState(show, message = 'Loading...') {
+    let loader = document.getElementById('app-loader');
+    
+    if (show) {
+        if (!loader) {
+            loader = document.createElement('div');
+            loader.id = 'app-loader';
+            loader.className = 'loading-overlay modern';
+            loader.innerHTML = `
+                <div class="loading-content">
+                    <div class="modern-spinner">
+                        <div class="spinner-ring"></div>
+                        <div class="spinner-ring"></div>
+                        <div class="spinner-ring"></div>
+                    </div>
+                    <div class="loading-text">${message}</div>
+                    <div class="loading-subtitle">Please wait while we prepare your data</div>
+                </div>
+            `;
+            document.body.appendChild(loader);
+        } else {
+            loader.querySelector('.loading-text').textContent = message;
         }
+        
+        loader.classList.add('loading-show');
+    } else {
+        if (loader) {
+            loader.classList.add('loading-hide');
+            setTimeout(() => {
+                if (loader.parentNode) {
+                    loader.remove();
+                }
+            }, 300);
+        }
+    }
+}
+
+// ENHANCED: Status badge creation with modern design
+function createStatusBadge(status) {
+    const statusMap = {
+        'paid': { icon: '✅', color: 'success', text: 'Paid' },
+        'pending': { icon: '⏳', color: 'warning', text: 'Pending' },
+        'draft': { icon: '📝', color: 'info', text: 'Draft' },
+        'overdue': { icon: '⚠️', color: 'error', text: 'Overdue' },
+        'cancelled': { icon: '❌', color: 'error', text: 'Cancelled' }
+    };
+    
+    const statusInfo = statusMap[status.toLowerCase()] || statusMap['draft'];
+    
+    return `
+        <span class="status-badge modern ${statusInfo.color}">
+            <span class="status-icon">${statusInfo.icon}</span>
+            <span class="status-text">${statusInfo.text}</span>
+            <span class="status-pulse"></span>
+        </span>
+    `;
+}
+
+// ENHANCED: Format currency with modern display
+function formatCurrency(amount, currency = 'INR') {
+    if (amount === null || amount === undefined || isNaN(amount)) return '₹0';
+    
+    const formatted = new Intl.NumberFormat('en-IN', {
+        style: 'currency',
+        currency: currency === 'INR' ? 'INR' : 'USD',
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 2
+    }).format(amount);
+    
+    return formatted.replace('₹', '₹').replace('$', '$');
+}
+
+// ENHANCED: Animation utilities
+const animationUtils = {
+    fadeIn: (element, duration = 300) => {
+        element.style.opacity = '0';
+        element.style.transform = 'translateY(20px)';
+        element.style.transition = `all ${duration}ms ease-out`;
+        
+        setTimeout(() => {
+            element.style.opacity = '1';
+            element.style.transform = 'translateY(0)';
+        }, 10);
+    },
+    
+    slideIn: (element, direction = 'right', duration = 300) => {
+        const translateMap = {
+            'right': 'translateX(100%)',
+            'left': 'translateX(-100%)',
+            'up': 'translateY(-100%)',
+            'down': 'translateY(100%)'
+        };
+        
+        element.style.opacity = '0';
+        element.style.transform = translateMap[direction];
+        element.style.transition = `all ${duration}ms ease-out`;
+        
+        setTimeout(() => {
+            element.style.opacity = '1';
+            element.style.transform = 'translateX(0) translateY(0)';
+        }, 10);
+    },
+    
+    pulse: (element) => {
+        element.classList.add('pulse-animate');
+        setTimeout(() => {
+            element.classList.remove('pulse-animate');
+        }, 600);
+    },
+    
+    bounce: (element) => {
+        element.classList.add('bounce-animate');
+        setTimeout(() => {
+            element.classList.remove('bounce-animate');
+        }, 800);
     }
 };
 
-// Keyboard shortcuts for power users
-document.addEventListener('keydown', (e) => {
-    // Ctrl/Cmd + N for new invoice
-    if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
-        e.preventDefault();
-        const createBtn = document.getElementById('create-invoice-btn');
-        if (createBtn && !document.querySelector('.modal:not(.hidden)')) {
-            createBtn.click();
-            showToast('New invoice shortcut: Ctrl+N', 'info');
-        }
-    }
-
-    // Ctrl/Cmd + K for new client
-    if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
-        e.preventDefault();
-        const addClientBtn = document.getElementById('add-client-btn');
-        if (addClientBtn && !document.querySelector('.modal:not(.hidden)')) {
-            addClientBtn.click();
-            showToast('New client shortcut: Ctrl+K', 'info');
-        }
-    }
-
-    // Escape to close modals
-    if (e.key === 'Escape') {
-        const openModal = document.querySelector('.modal:not(.hidden)');
-        if (openModal) {
-            closeModal(openModal);
-        }
-    }
-});
-
+// ENHANCED: Modern search functionality
+function createSearchInput(placeholder = 'Search...', onSearch) {
+    const searchContainer = document.createElement('div');
+    searchContainer.className = 'modern-search';
+    searchContainer.innerHTML = `
+        <div class="search-input-container">
+            <svg class="search-icon" width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+            </svg>
+            <input type="text" class="search-input" placeholder="${placeholder}">
+            <button class="search-clear" style="display: none;">
+                <svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                </svg>
+            </button>
+        </div>
+    `;
+    
+    const input = searchContainer.querySelector('.search-input');
+    const clearBtn = searchContainer.querySelector('.search-clear');
+    
+    input.addEventListener('input', (e) => {
+        const value = e.target.value;
+        clearBtn.style.display = value ? 'flex' : 'none';
+        if (onSearch) onSearch(value);
+    });
+    
+    clearBtn.addEventListener('click', () => {
+        input.value = '';
+        clearBtn.style.display = 'none';
+        if (onSearch) onSearch('');
+        input.focus();
+    });
+    
+    return searchContainer;
+}
 // 🆕 ADD THIS COMPLETE FUNCTION - copy everything between these lines
 
 // Aggressive cleanup of expense elements from all pages except expenses
