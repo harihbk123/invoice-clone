@@ -1235,8 +1235,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Handle search button
             if (e.target.id === 'search-clients-btn' || e.target.closest('#search-clients-btn')) {
-                // Implement search functionality
-                showToast('Search functionality coming soon!', 'info');
+                openClientSearchModal();
                 return;
             }
             
@@ -1320,6 +1319,10 @@ async function initializeApp() {
         setupForms();
         setupAnalyticsFilters();
         setupDateRangeFilters();
+        
+        // Initialize simple search and filters
+        initializeSimpleSearch();
+        initializeClientFilters();
         
         // Initialize Expense Management
         try {
@@ -3998,12 +4001,13 @@ function renderClients() {
                     <p class="hero-subtitle">Manage your client relationships and track their performance</p>
                 </div>
                 <div class="hero-actions">
-                    <button class="btn-modern btn-search" id="search-clients-btn">
-                        <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
+                    <div class="search-container">
+                        <input type="text" id="client-search-input" placeholder="Search clients..." class="search-input">
+                        <svg class="search-icon" width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
                             <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
                         </svg>
-                        Search clients
-                    </button>
+                        <button id="clear-search" class="clear-search" style="display: none;">×</button>
+                    </div>
                     <button class="btn-modern btn-primary" id="add-client-btn">
                         <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
                             <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
@@ -4011,6 +4015,24 @@ function renderClients() {
                         Add Client
                     </button>
                 </div>
+            </div>
+        </div>
+
+        <!-- Search Status Indicator (only shown when search is active) -->
+        <div class="search-status-container" id="search-status" style="display: none;">
+            <div class="search-status-bar">
+                <div class="search-info">
+                    <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+                    </svg>
+                    <span id="search-status-text">Search results</span>
+                </div>
+                <button class="clear-search-btn" onclick="viewAllClients()">
+                    <svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                    </svg>
+                    Clear Search
+                </button>
             </div>
         </div>
 
@@ -6233,6 +6255,565 @@ async function saveClient() {
             saveBtn.disabled = false;
         }
     }
+}
+
+// ============================================================================
+// SIMPLE CLIENT SEARCH FUNCTIONALITY
+// ============================================================================
+
+// Simple search state
+let clientSearchState = {
+    isSearching: false,
+    originalClients: []
+};
+
+// Initialize simple search functionality
+function initializeSimpleSearch() {
+    const searchInput = document.getElementById('client-search-input');
+    const clearBtn = document.getElementById('clear-search');
+    
+    if (!searchInput) return;
+    
+    // Store original clients
+    clientSearchState.originalClients = [...appData.clients];
+    
+    // Real-time search with debounce
+    searchInput.addEventListener('input', debounce((e) => {
+        const query = e.target.value.trim();
+        
+        if (query.length === 0) {
+            clearClientSearch();
+        } else {
+            performClientSearch(query);
+        }
+        
+        // Show/hide clear button
+        if (clearBtn) {
+            clearBtn.style.display = query.length > 0 ? 'block' : 'none';
+        }
+    }, 300));
+    
+    // Clear search functionality
+    if (clearBtn) {
+        clearBtn.addEventListener('click', () => {
+            searchInput.value = '';
+            clearClientSearch();
+            clearBtn.style.display = 'none';
+        });
+    }
+}
+
+// Perform simple client search
+function performClientSearch(query) {
+    if (!query) {
+        clearClientSearch();
+        return;
+    }
+    
+    const searchTerm = query.toLowerCase();
+    const filteredClients = clientSearchState.originalClients.filter(client => {
+        return (
+            (client.name || '').toLowerCase().includes(searchTerm) ||
+            (client.email || '').toLowerCase().includes(searchTerm) ||
+            (client.phone || '').toLowerCase().includes(searchTerm) ||
+            (client.contact_name || '').toLowerCase().includes(searchTerm)
+        );
+    });
+    
+    // Update the display
+    appData.clients = filteredClients;
+    clientSearchState.isSearching = true;
+    
+    // Re-render clients with filtered results
+    renderClientsGrid();
+    
+    console.log(`Search: "${query}" - Found ${filteredClients.length} clients`);
+}
+
+// Clear client search and restore all clients
+function clearClientSearch() {
+    appData.clients = [...clientSearchState.originalClients];
+    clientSearchState.isSearching = false;
+    
+    // Re-render all clients
+    renderClientsGrid();
+    
+    console.log('Search cleared - Showing all clients');
+}
+
+// Initialize client filters functionality
+function initializeClientFilters() {
+    // Status filter tabs
+    const filterTabs = document.querySelectorAll('.filter-tab');
+    filterTabs.forEach(tab => {
+        tab.addEventListener('click', (e) => {
+            // Remove active class from all tabs
+            filterTabs.forEach(t => t.classList.remove('active'));
+            // Add active class to clicked tab
+            e.target.classList.add('active');
+            
+            const filterValue = e.target.dataset.filter;
+            applyStatusFilter(filterValue);
+        });
+    });
+    
+    // Sort dropdown
+    const sortSelect = document.getElementById('client-sort');
+    if (sortSelect) {
+        sortSelect.addEventListener('change', (e) => {
+            applySortFilter(e.target.value);
+        });
+    }
+    
+    // View controls
+    const viewButtons = document.querySelectorAll('.view-btn');
+    viewButtons.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            // Remove active class from all view buttons
+            viewButtons.forEach(vb => vb.classList.remove('active'));
+            // Add active class to clicked button
+            e.currentTarget.classList.add('active');
+            
+            const viewType = e.currentTarget.dataset.view;
+            switchClientView(viewType);
+        });
+    });
+}
+
+// Apply status filter
+function applyStatusFilter(status) {
+    let filteredClients;
+    
+    switch(status) {
+        case 'active':
+            // Consider clients with recent activity as active
+            filteredClients = clientSearchState.originalClients.filter(client => 
+                client.total_invoices > 0 && client.total_amount > 0
+            );
+            break;
+        case 'inactive':
+            // Consider clients with no invoices as inactive
+            filteredClients = clientSearchState.originalClients.filter(client => 
+                !client.total_invoices || client.total_invoices === 0
+            );
+            break;
+        default:
+            filteredClients = [...clientSearchState.originalClients];
+    }
+    
+    appData.clients = filteredClients;
+    renderClientsGrid();
+    
+    console.log(`Status filter applied: ${status} - ${filteredClients.length} clients`);
+}
+
+// Apply sort filter
+function applySortFilter(sortBy) {
+    let sortedClients = [...appData.clients];
+    
+    switch(sortBy) {
+        case 'name':
+            sortedClients.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+            break;
+        case 'recent':
+            // Sort by recent activity (assuming we have a last activity date)
+            sortedClients.sort((a, b) => {
+                const aDate = new Date(a.last_activity || a.created_at || 0);
+                const bDate = new Date(b.last_activity || b.created_at || 0);
+                return bDate - aDate;
+            });
+            break;
+        case 'revenue':
+        default:
+            sortedClients.sort((a, b) => (b.total_amount || 0) - (a.total_amount || 0));
+    }
+    
+    appData.clients = sortedClients;
+    renderClientsGrid();
+    
+    console.log(`Sort applied: ${sortBy}`);
+}
+
+// Switch client view between grid and list
+function switchClientView(viewType) {
+    const clientsGrid = document.querySelector('.clients-grid-modern');
+    
+    if (!clientsGrid) return;
+    
+    if (viewType === 'list') {
+        clientsGrid.classList.add('list-view');
+        clientsGrid.classList.remove('grid-view');
+    } else {
+        clientsGrid.classList.add('grid-view');
+        clientsGrid.classList.remove('list-view');
+    }
+    
+    console.log(`View switched to: ${viewType}`);
+}
+
+// Open client search modal
+function openClientSearchModal() {
+    const modal = document.getElementById('client-modal');
+    if (!modal) return;
+    
+    // Store original clients for restoration
+    clientSearchState.originalClients = [...appData.clients];
+    
+    modal.innerHTML = `
+        <div class="modal-overlay" onclick="closeClientSearchModal()"></div>
+        <div class="modal-content search-modal-content">
+            <div class="modal-header">
+                <h2>
+                    <div class="modal-title-content">
+                        <span class="modal-icon">🔍</span>
+                        <span>Search Clients</span>
+                        <span class="search-badge">Search</span>
+                    </div>
+                </h2>
+                <button class="modal-close" onclick="closeClientSearchModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="search-container">
+                    <!-- Main Search Input -->
+                    <div class="search-input-container">
+                        <input type="text" 
+                               id="client-search-input" 
+                               class="search-input" 
+                               placeholder="Search by name, email, phone, or contact person..."
+                               autocomplete="off">
+                        <button class="search-clear-btn" onclick="clearSearch()" style="display: none;">
+                            <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                            </svg>
+                        </button>
+                    </div>
+                    
+                    <!-- Search Filters -->
+                    <div class="search-filters">
+                        <div class="filter-group">
+                            <label class="filter-label">Search in:</label>
+                            <div class="filter-checkboxes">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="search-name" checked> Company Name
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="search-email" checked> Email
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="search-phone" checked> Phone
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="search-contact" checked> Contact Person
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="filter-group">
+                            <label class="filter-label">Client Tier:</label>
+                            <select id="search-tier" class="filter-select">
+                                <option value="">All Tiers</option>
+                                <option value="Enterprise">Enterprise</option>
+                                <option value="Premium">Premium</option>
+                                <option value="Standard">Standard</option>
+                                <option value="New">New</option>
+                            </select>
+                        </div>
+                        
+                        <div class="filter-group">
+                            <label class="filter-label">Payment Terms:</label>
+                            <select id="search-terms" class="filter-select">
+                                <option value="">All Terms</option>
+                                <option value="net15">Net 15 days</option>
+                                <option value="net30">Net 30 days</option>
+                                <option value="net45">Net 45 days</option>
+                                <option value="net60">Net 60 days</option>
+                                <option value="due_on_receipt">Due on receipt</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- Search History -->
+                    <div class="search-history" id="search-history" style="display: none;">
+                        <h4>Recent Searches</h4>
+                        <div class="history-items" id="history-items"></div>
+                    </div>
+                    
+                    <!-- Search Results Count -->
+                    <div class="search-results-info" id="search-results-info" style="display: none;">
+                        <span id="results-count">0 clients found</span>
+                        <button class="view-all-btn" onclick="viewAllClients()">View All Clients</button>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn--secondary" onclick="closeClientSearchModal()">Close</button>
+                <button type="button" class="btn btn--primary" onclick="applySearch()">Apply Search</button>
+            </div>
+        </div>
+    `;
+    
+    modal.classList.remove('hidden');
+    modal.style.display = 'flex';
+    
+    // Initialize search functionality
+    initializeClientSearch();
+    
+    // Focus on search input
+    setTimeout(() => {
+        const searchInput = document.getElementById('client-search-input');
+        if (searchInput) searchInput.focus();
+    }, 100);
+}
+
+// Initialize search event listeners
+function initializeClientSearch() {
+    const searchInput = document.getElementById('client-search-input');
+    const searchFilters = document.querySelectorAll('.search-filters input, .search-filters select');
+    
+    if (searchInput) {
+        // Real-time search as you type
+        searchInput.addEventListener('input', debounce(performLiveSearch, 300));
+        searchInput.addEventListener('focus', showSearchHistory);
+        
+        // Show/hide clear button
+        searchInput.addEventListener('input', () => {
+            const clearBtn = document.querySelector('.search-clear-btn');
+            if (clearBtn) {
+                clearBtn.style.display = searchInput.value ? 'flex' : 'none';
+            }
+        });
+    }
+    
+    // Filter change listeners
+    searchFilters.forEach(filter => {
+        filter.addEventListener('change', performLiveSearch);
+    });
+    
+    // Show search history if available
+    displaySearchHistory();
+}
+
+// Perform live search
+function performLiveSearch() {
+    const query = document.getElementById('client-search-input').value.toLowerCase().trim();
+    clientSearchState.currentQuery = query;
+    
+    if (!query && !hasActiveFilters()) {
+        // Show all clients if no search query or filters
+        clientSearchState.searchResults = [...clientSearchState.originalClients];
+        updateSearchResultsInfo(clientSearchState.originalClients.length, false);
+        return;
+    }
+    
+    // Get filter values
+    const filters = getSearchFilters();
+    
+    // Perform search
+    const results = searchClients(query, filters);
+    clientSearchState.searchResults = results;
+    
+    // Update UI
+    updateSearchResultsInfo(results.length, true);
+    
+    // Hide search history when searching
+    const historyContainer = document.getElementById('search-history');
+    if (historyContainer) {
+        historyContainer.style.display = 'none';
+    }
+}
+
+// Search clients based on query and filters
+function searchClients(query, filters) {
+    return clientSearchState.originalClients.filter(client => {
+        // Text search
+        let matchesQuery = false;
+        if (!query) {
+            matchesQuery = true; // No query means match all for text search
+        } else {
+            const searchFields = [];
+            
+            if (filters.searchName) searchFields.push(client.name || '');
+            if (filters.searchEmail) searchFields.push(client.email || '');
+            if (filters.searchPhone) searchFields.push(client.phone || '');
+            if (filters.searchContact) searchFields.push(client.contact_name || '');
+            
+            matchesQuery = searchFields.some(field => 
+                field.toLowerCase().includes(query)
+            );
+        }
+        
+        // Filter by tier
+        const matchesTier = !filters.tier || client.tier === filters.tier;
+        
+        // Filter by payment terms
+        const matchesTerms = !filters.terms || client.payment_terms === filters.terms;
+        
+        return matchesQuery && matchesTier && matchesTerms;
+    });
+}
+
+// Get current search filter values
+function getSearchFilters() {
+    return {
+        searchName: document.getElementById('search-name')?.checked || false,
+        searchEmail: document.getElementById('search-email')?.checked || false,
+        searchPhone: document.getElementById('search-phone')?.checked || false,
+        searchContact: document.getElementById('search-contact')?.checked || false,
+        tier: document.getElementById('search-tier')?.value || '',
+        terms: document.getElementById('search-terms')?.value || ''
+    };
+}
+
+// Check if any filters are active
+function hasActiveFilters() {
+    const filters = getSearchFilters();
+    return filters.tier || filters.terms || 
+           (!filters.searchName && !filters.searchEmail && !filters.searchPhone && !filters.searchContact);
+}
+
+// Update search results information
+function updateSearchResultsInfo(count, isSearchActive) {
+    const infoContainer = document.getElementById('search-results-info');
+    const countElement = document.getElementById('results-count');
+    
+    if (infoContainer && countElement) {
+        if (isSearchActive) {
+            infoContainer.style.display = 'flex';
+            countElement.textContent = `${count} client${count !== 1 ? 's' : ''} found`;
+        } else {
+            infoContainer.style.display = 'none';
+        }
+    }
+}
+
+// Apply search and close modal
+function applySearch() {
+    const query = clientSearchState.currentQuery;
+    
+    // Save to search history
+    if (query && !clientSearchState.searchHistory.includes(query)) {
+        clientSearchState.searchHistory.unshift(query);
+        clientSearchState.searchHistory = clientSearchState.searchHistory.slice(0, 10); // Keep last 10
+        localStorage.setItem('clientSearchHistory', JSON.stringify(clientSearchState.searchHistory));
+    }
+    
+    // Apply search results to main clients view
+    if (clientSearchState.searchResults.length > 0) {
+        appData.clients = [...clientSearchState.searchResults];
+        clientSearchState.isSearchActive = true;
+        renderClients();
+        
+        // Show search status
+        updateSearchStatus(true, clientSearchState.searchResults.length, query);
+        
+        showToast(`Found ${clientSearchState.searchResults.length} client${clientSearchState.searchResults.length !== 1 ? 's' : ''}`, 'success');
+    } else {
+        showToast('No clients found matching your criteria', 'info');
+    }
+    
+    closeClientSearchModal();
+}
+
+// Close search modal
+function closeClientSearchModal() {
+    const modal = document.getElementById('client-modal');
+    if (modal) {
+        closeModal(modal);
+    }
+}
+
+// Clear search
+function clearSearch() {
+    const searchInput = document.getElementById('client-search-input');
+    if (searchInput) {
+        searchInput.value = '';
+        searchInput.dispatchEvent(new Event('input'));
+    }
+}
+
+// View all clients (remove search filter)
+function viewAllClients() {
+    appData.clients = [...clientSearchState.originalClients];
+    clientSearchState.isSearchActive = false;
+    clientSearchState.currentQuery = '';
+    clientSearchState.searchResults = [];
+    
+    // Hide search status
+    updateSearchStatus(false);
+    
+    renderClients();
+    closeClientSearchModal();
+    showToast('Showing all clients', 'info');
+}
+
+// Show search history
+function showSearchHistory() {
+    const historyContainer = document.getElementById('search-history');
+    const query = document.getElementById('client-search-input')?.value;
+    
+    if (historyContainer && !query && clientSearchState.searchHistory.length > 0) {
+        historyContainer.style.display = 'block';
+        displaySearchHistory();
+    }
+}
+
+// Display search history
+function displaySearchHistory() {
+    const historyItems = document.getElementById('history-items');
+    if (!historyItems || clientSearchState.searchHistory.length === 0) return;
+    
+    historyItems.innerHTML = clientSearchState.searchHistory.map(term => `
+        <button class="history-item" onclick="useSearchTerm('${term}')">
+            <svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/>
+            </svg>
+            ${term}
+        </button>
+    `).join('');
+}
+
+// Use search term from history
+function useSearchTerm(term) {
+    const searchInput = document.getElementById('client-search-input');
+    if (searchInput) {
+        searchInput.value = term;
+        searchInput.dispatchEvent(new Event('input'));
+        searchInput.focus();
+    }
+}
+
+// Update search status indicator
+function updateSearchStatus(show, count = 0, query = '') {
+    const statusContainer = document.getElementById('search-status');
+    const statusText = document.getElementById('search-status-text');
+    
+    if (statusContainer) {
+        if (show) {
+            statusContainer.style.display = 'block';
+            if (statusText) {
+                if (query) {
+                    statusText.textContent = `Showing ${count} result${count !== 1 ? 's' : ''} for "${query}"`;
+                } else {
+                    statusText.textContent = `Showing ${count} filtered result${count !== 1 ? 's' : ''}`;
+                }
+            }
+        } else {
+            statusContainer.style.display = 'none';
+        }
+    }
+}
+
+// Utility function for debouncing
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
 }
 
 function setupSettingsForm() {
