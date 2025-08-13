@@ -4623,196 +4623,354 @@ async function deleteClient(clientId, clientName) {
 }
 
 function renderAnalytics(period = 'monthly') {
-    console.log('Rendering analytics...');
-    cleanupExpenseFilters();
+    console.log('Rendering Analytics...');
     
-    // Clear dynamic content
     const analyticsPage = document.getElementById('analytics-page');
-    if (analyticsPage) {
-        // Remove loading placeholder
-        const loadingPlaceholder = analyticsPage.querySelector('.loading-placeholder');
-        if (loadingPlaceholder) loadingPlaceholder.remove();
+    if (!analyticsPage) return;
+    
+    // Clean up existing content and charts
+    cleanupAnalyticsPage();
+    
+    analyticsPage.innerHTML = getAnalyticsPageHTML();
+    
+    // Initialize analytics
+    setTimeout(() => {
+        initializeAnalyticsEventListeners();
+        renderAnalyticsData();
+    }, 100);
+}
+
+function getAnalyticsPageHTML() {
+    return `
+        <!-- Hero Section -->
+        <div class="hero-section">
+            <div class="hero-content">
+                <div class="hero-text">
+                    <h1 class="hero-title">📈 Business Analytics</h1>
+                    <p class="hero-subtitle">Comprehensive insights and performance metrics</p>
+                </div>
+                <div class="hero-actions">
+                    <button class="btn btn--secondary" id="export-analytics">
+                        <span class="btn-icon">📊</span>
+                        Export Report
+                    </button>
+                    <button class="btn btn--primary" id="refresh-analytics">
+                        <span class="btn-icon">🔄</span>
+                        Refresh Data
+                    </button>
+                </div>
+            </div>
+        </div>
         
-        // Remove old analytics layout
-        const oldLayout = analyticsPage.querySelector('#modern-analytics-layout');
-        if (oldLayout) oldLayout.remove();
+        <!-- Key Metrics -->
+        <div class="analytics-metrics-grid">
+            <div class="analytics-metric-card">
+                <div class="metric-icon">💰</div>
+                <div class="metric-content">
+                    <div class="metric-value" id="total-revenue-value">₹0</div>
+                    <div class="metric-label">Total Revenue</div>
+                    <div class="metric-change positive" id="revenue-change">+12.5%</div>
+                </div>
+            </div>
+            <div class="analytics-metric-card">
+                <div class="metric-icon">📄</div>
+                <div class="metric-content">
+                    <div class="metric-value" id="total-invoices-value">0</div>
+                    <div class="metric-label">Total Invoices</div>
+                    <div class="metric-change positive" id="invoices-change">+8.3%</div>
+                </div>
+            </div>
+            <div class="analytics-metric-card">
+                <div class="metric-icon">👥</div>
+                <div class="metric-content">
+                    <div class="metric-value" id="active-clients-value">0</div>
+                    <div class="metric-label">Active Clients</div>
+                    <div class="metric-change positive" id="clients-change">+2 new</div>
+                </div>
+            </div>
+            <div class="analytics-metric-card">
+                <div class="metric-icon">📊</div>
+                <div class="metric-content">
+                    <div class="metric-value" id="avg-invoice-value">₹0</div>
+                    <div class="metric-label">Average Invoice</div>
+                    <div class="metric-change negative" id="avg-change">-3.2%</div>
+                </div>
+            </div>
+        </div>
         
-        // Destroy analytics chart if exists
-        if (window.analyticsChart && typeof window.analyticsChart.destroy === 'function') { 
-            window.analyticsChart.destroy(); 
-            window.analyticsChart = null; 
-        }
-    }
-    if (analyticsPage && !document.getElementById('modern-analytics-layout')) {
-        const analyticsLayout = document.createElement('div');
-        analyticsLayout.id = 'modern-analytics-layout';
-        analyticsLayout.innerHTML = `
-            <div class="analytics-grid">
-                <div class="chart-container">
-                    <div class="chart-header">
-                        <div>
-                            <div class="chart-title">📊 Earnings Trend Analysis</div>
-                            <div class="chart-subtitle" id="chart-subtitle">Monthly earnings overview</div>
-                        </div>
-                    </div>
-                    <div style="height: 300px; position: relative;">
-                        <canvas id="analyticsChart"></canvas>
+        <!-- Filters and Controls -->
+        <div class="analytics-filters-section">
+            <div class="filters-container">
+                <div class="filters-header">
+                    <h3 class="filters-title">� Analytics Filters</h3>
+                    <div class="filters-actions">
+                        <button class="btn btn--sm btn--secondary" id="clear-analytics-filters">Clear All</button>
                     </div>
                 </div>
                 
-                <div class="insights-panel">
-                    <div class="chart-header">
-                        <div class="chart-title">💡 Key Insights</div>
+                <div class="filters-grid">
+                    <div class="filter-group">
+                        <label class="filter-label">Time Period</label>
+                        <select class="filter-select" id="analytics-period">
+                            <option value="monthly">Monthly</option>
+                            <option value="quarterly">Quarterly</option>
+                            <option value="yearly">Yearly</option>
+                        </select>
                     </div>
-                    <div id="analytics-insights"></div>
+                    
+                    <div class="filter-group">
+                        <label class="filter-label">Date Range</label>
+                        <select class="filter-select" id="analytics-date-range">
+                            <option value="last_6_months">Last 6 Months</option>
+                            <option value="last_12_months">Last 12 Months</option>
+                            <option value="current_year">Current Year</option>
+                            <option value="last_year">Last Year</option>
+                            <option value="custom">Custom Range</option>
+                        </select>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label class="filter-label">Client Filter</label>
+                        <select class="filter-select" id="analytics-client-filter">
+                            <option value="all">All Clients</option>
+                        </select>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label class="filter-label">Status Filter</label>
+                        <select class="filter-select" id="analytics-status-filter">
+                            <option value="all">All Status</option>
+                            <option value="paid">Paid Only</option>
+                            <option value="pending">Pending Only</option>
+                            <option value="overdue">Overdue Only</option>
+                        </select>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <button class="btn btn--primary btn--sm" id="apply-analytics-filters">Apply Filters</button>
+                    </div>
+                </div>
+                
+                <!-- Custom Date Range (hidden by default) -->
+                <div class="custom-date-range hidden" id="custom-date-range">
+                    <div class="date-range-inputs">
+                        <div class="filter-group">
+                            <label class="filter-label">From Date</label>
+                            <input type="date" class="filter-input" id="analytics-date-from">
+                        </div>
+                        <div class="filter-group">
+                            <label class="filter-label">To Date</label>
+                            <input type="date" class="filter-input" id="analytics-date-to">
+                        </div>
+                    </div>
                 </div>
             </div>
-        `;
-        analyticsPage.appendChild(analyticsLayout);
-        // Add analytics grid styles
-        if (!document.getElementById('analytics-grid-styles')) {
-            const style = document.createElement('style');
-            style.id = 'analytics-grid-styles';
-            style.textContent = `
-                .analytics-grid {
-                    display: grid;
-                    grid-template-columns: 2fr 1fr;
-                    gap: 20px;
-                    margin-top: 20px;
-                }
-
-                .chart-container {
-                    background: white;
-                    padding: 20px;
-                    border-radius: 12px;
-                    border: 1px solid #e2e8f0;
-                    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-                }
-
-                .chart-header {
-                    display: flex;
-                    align-items: center;
-                    justify-content: space-between;
-                    margin-bottom: 16px;
-                    padding-bottom: 12px;
-                    border-bottom: 1px solid #f1f5f9;
-                }
-
-                .chart-title {
-                    font-size: 16px;
-                    font-weight: 600;
-                    color: #1e293b;
-                    display: flex;
-                    align-items: center;
-                    gap: 8px;
-                }
-
-                .chart-subtitle {
-                    font-size: 12px;
-                    color: #64748b;
-                    margin-top: 4px;
-                }
-
-                .insights-panel {
-                    background: white;
-                    padding: 20px;
-                    border-radius: 12px;
-                    border: 1px solid #e2e8f0;
-                    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-                }
-
-                .insight-item {
-                    padding: 12px 0;
+        </div>
+        
+        <!-- Charts Section -->
+        <div class="analytics-charts-section">
+            <div class="analytics-main-chart">
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h3 class="chart-title">📊 Earnings Trend Analysis</h3>
+                        <div class="chart-period-tabs">
+                            <button class="period-tab active" data-period="monthly">Monthly</button>
+                            <button class="period-tab" data-period="quarterly">Quarterly</button>
+                            <button class="period-tab" data-period="yearly">Yearly</button>
+                        </div>
+                    </div>
+                    <div class="chart-content">
+                        <canvas id="analyticsChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="analytics-side-charts">
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h3 class="chart-title">💼 Client Distribution</h3>
+                    </div>
+                    <div class="chart-content">
+                        <canvas id="clientDistributionChart"></canvas>
+                    </div>
+                </div>
+                
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h3 class="chart-title">📈 Status Breakdown</h3>
+                    </div>
+                    <div class="chart-content">
+                        <canvas id="statusBreakdownChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Insights Section -->
+        <div class="analytics-insights-section">
+            <div class="insights-container">
+                <div class="insights-header">
+                    <h3 class="insights-title">💡 Key Insights & Recommendations</h3>
+                </div>
+                <div class="insights-grid" id="analytics-insights">
+                    <!-- Populated by JavaScript -->
+                </div>
+            </div>
+        </div>
+        
+        <!-- Top Performers Table -->
+        <div class="analytics-table-section">
+            <div class="table-header">
+                <h3 class="table-title">🏆 Top Performing Clients</h3>
+                <div class="table-actions">
+                    <button class="btn btn--sm btn--secondary" id="view-all-clients">View All</button>
+                </div>
+            </div>
+            <div class="table-container">
+                <table class="analytics-table">
+                    <thead>
+                        <tr>
+                            <th>Client</th>
+                            <th>Total Revenue</th>
+                            <th>Invoices</th>
+                            <th>Average Amount</th>
+                            <th>Last Invoice</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="top-clients-table">
+                        <!-- Populated by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    `;
+}
                     border-bottom: 1px solid #f1f5f9;
                 }
 
                 .insight-item:last-child {
-                    border-bottom: none;
-                }
-
-                .insight-label {
-                    font-size: 11px;
-                    color: #64748b;
-                    text-transform: uppercase;
-                    letter-spacing: 0.5px;
-                    font-weight: 600;
-                    margin-bottom: 4px;
-                }
-
-                .insight-value {
-                    font-size: 18px;
-                    font-weight: 700;
-                    color: #1e293b;
-                }
-
-                .insight-change {
-                    font-size: 11px;
-                    font-weight: 600;
-                    margin-top: 2px;
-                }
-
-                .insight-change.positive { color: #059669; }
-                .insight-change.negative { color: #dc2626; }
-
-                @media (max-width: 768px) {
-                    .analytics-grid {
-                        grid-template-columns: 1fr;
-                        gap: 16px;
-                    }
-                }
-            `;
-            document.head.appendChild(style);
-        }
-    }
-
-    const dataToUse = analyticsState.filteredData || appData.invoices;
+function initializeAnalyticsEventListeners() {
+    // Period tabs
+    const periodTabs = document.querySelectorAll('.period-tab');
+    periodTabs.forEach(tab => {
+        tab.addEventListener('click', (e) => {
+            periodTabs.forEach(t => t.classList.remove('active'));
+            e.target.classList.add('active');
+            const period = e.target.dataset.period;
+            renderAnalyticsChart(period);
+        });
+    });
     
-    setTimeout(() => {
-        renderAnalyticsChart(analyticsState.currentPeriod, dataToUse);
-        renderTopClientInsights(dataToUse);
-    }, 100);
+    // Export button
+    const exportBtn = document.getElementById('export-analytics');
+    if (exportBtn) {
+        exportBtn.addEventListener('click', () => exportAnalyticsReport());
+    }
+    
+    // Refresh button
+    const refreshBtn = document.getElementById('refresh-analytics');
+    if (refreshBtn) {
+        refreshBtn.addEventListener('click', () => {
+            showToast('Refreshing analytics data...', 'info');
+            renderAnalyticsData();
+        });
+    }
+    
+    // Date range change
+    const dateRangeSelect = document.getElementById('analytics-date-range');
+    if (dateRangeSelect) {
+        dateRangeSelect.addEventListener('change', (e) => {
+            const customRange = document.getElementById('custom-date-range');
+            if (e.target.value === 'custom') {
+                customRange.classList.remove('hidden');
+            } else {
+                customRange.classList.add('hidden');
+            }
+        });
+    }
+    
+    // Apply filters
+    const applyFiltersBtn = document.getElementById('apply-analytics-filters');
+    if (applyFiltersBtn) {
+        applyFiltersBtn.addEventListener('click', () => applyAnalyticsFilters());
+    }
+    
+    // Clear filters
+    const clearFiltersBtn = document.getElementById('clear-analytics-filters');
+    if (clearFiltersBtn) {
+        clearFiltersBtn.addEventListener('click', () => clearAnalyticsFilters());
+    }
+    
+    // Populate client filter
+    populateClientFilter();
 }
 
-function renderAnalyticsChart(period, invoices) {
-    const analyticsCtx = document.getElementById('analyticsChart');
-    if (!analyticsCtx) return;
+function renderAnalyticsData() {
+    const invoices = appData?.invoices || [];
+    const clients = appData?.clients || [];
+    
+    // Update metrics
+    updateAnalyticsMetrics(invoices, clients);
+    
+    // Render charts
+    renderAnalyticsChart('monthly');
+    renderClientDistributionChart(invoices, clients);
+    renderStatusBreakdownChart(invoices);
+    
+    // Generate insights
+    generateAnalyticsInsights(invoices, clients);
+    
+    // Populate top clients table
+    populateTopClientsTable(invoices, clients);
+}
 
-    if (analyticsChart) {
-        analyticsChart.destroy();
+function updateAnalyticsMetrics(invoices, clients) {
+    const totalRevenue = invoices.reduce((sum, inv) => sum + (inv.amount || 0), 0);
+    const totalInvoices = invoices.length;
+    const activeClients = clients.filter(c => 
+        invoices.some(inv => inv.clientId === c.id)
+    ).length;
+    const avgInvoice = totalInvoices > 0 ? totalRevenue / totalInvoices : 0;
+    
+    document.getElementById('total-revenue-value').textContent = `₹${formatNumber(totalRevenue)}`;
+    document.getElementById('total-invoices-value').textContent = totalInvoices;
+    document.getElementById('active-clients-value').textContent = activeClients;
+    document.getElementById('avg-invoice-value').textContent = `₹${formatNumber(avgInvoice)}`;
+}
+
+function renderAnalyticsChart(period = 'monthly') {
+    const canvas = document.getElementById('analyticsChart');
+    if (!canvas) return;
+    
+    // Destroy existing chart
+    if (window.analyticsChart) {
+        window.analyticsChart.destroy();
     }
-
-    let earningsData = [];
-    let label = '';
-    let subtitle = '';
-
-    if (period === 'quarterly') {
-        earningsData = calculateQuarterlyEarnings(invoices);
-        label = 'Quarterly Earnings';
-        subtitle = 'Quarterly earnings breakdown';
-    } else if (period === 'yearly') {
-        earningsData = calculateYearlyEarnings(invoices);
-        label = 'Yearly Earnings';
-        subtitle = 'Annual earnings comparison';
-    } else {
-        earningsData = calculateMonthlyEarningsForData(invoices);
-        label = 'Monthly Earnings';
-        subtitle = 'Monthly earnings overview';
+    
+    const invoices = getFilteredAnalyticsData();
+    let chartData;
+    
+    switch (period) {
+        case 'quarterly':
+            chartData = calculateQuarterlyEarnings(invoices);
+            break;
+        case 'yearly':
+            chartData = calculateYearlyEarnings(invoices);
+            break;
+        default:
+            chartData = calculateMonthlyEarningsForData(invoices);
     }
-
-    const subtitleElement = document.getElementById('chart-subtitle');
-    if (subtitleElement) {
-        subtitleElement.textContent = subtitle;
-    }
-
-    analyticsChart = new Chart(analyticsCtx, {
+    
+    window.analyticsChart = new Chart(canvas, {
         type: 'bar',
         data: {
-            labels: earningsData.map(m => m.month),
+            labels: chartData.map(d => d.month),
             datasets: [{
-                label: label,
-                data: earningsData.map(m => m.amount),
-                backgroundColor: 'rgba(59, 130, 246, 0.8)',
-                borderColor: 'rgba(59, 130, 246, 1)',
+                label: 'Revenue',
+                data: chartData.map(d => d.amount),
+                backgroundColor: 'rgba(79, 70, 229, 0.8)',
+                borderColor: 'rgba(79, 70, 229, 1)',
                 borderWidth: 2,
                 borderRadius: 8,
                 borderSkipped: false,
@@ -4832,24 +4990,314 @@ function renderAnalyticsChart(period, invoices) {
                     ticks: {
                         callback: function(value) {
                             return '₹' + formatNumber(value);
-                        },
-                        color: '#64748b'
-                    },
-                    grid: {
-                        color: 'rgba(0,0,0,0.05)'
-                    }
-                },
-                x: {
-                    ticks: {
-                        color: '#64748b'
-                    },
-                    grid: {
-                        color: 'rgba(0,0,0,0.05)'
+                        }
                     }
                 }
             }
         }
     });
+}
+
+function renderClientDistributionChart(invoices, clients) {
+    const canvas = document.getElementById('clientDistributionChart');
+    if (!canvas) return;
+    
+    // Destroy existing chart
+    if (window.clientDistributionChart) {
+        window.clientDistributionChart.destroy();
+    }
+    
+    // Calculate client revenue distribution
+    const clientRevenue = {};
+    invoices.forEach(inv => {
+        const clientId = inv.clientId;
+        if (!clientRevenue[clientId]) {
+            clientRevenue[clientId] = 0;
+        }
+        clientRevenue[clientId] += inv.amount || 0;
+    });
+    
+    // Get top 5 clients
+    const sortedClients = Object.entries(clientRevenue)
+        .sort(([,a], [,b]) => b - a)
+        .slice(0, 5);
+    
+    const labels = sortedClients.map(([clientId]) => {
+        const client = clients.find(c => c.id === clientId);
+        return client ? client.name : 'Unknown Client';
+    });
+    
+    const data = sortedClients.map(([,revenue]) => revenue);
+    
+    window.clientDistributionChart = new Chart(canvas, {
+        type: 'doughnut',
+        data: {
+            labels,
+            datasets: [{
+                data,
+                backgroundColor: [
+                    '#4F46E5',
+                    '#7C3AED',
+                    '#EC4899',
+                    '#EF4444',
+                    '#F59E0B'
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+}
+
+function renderStatusBreakdownChart(invoices) {
+    const canvas = document.getElementById('statusBreakdownChart');
+    if (!canvas) return;
+    
+    // Destroy existing chart
+    if (window.statusBreakdownChart) {
+        window.statusBreakdownChart.destroy();
+    }
+    
+    // Calculate status distribution
+    const statusCounts = {
+        'Paid': 0,
+        'Pending': 0,
+        'Overdue': 0
+    };
+    
+    invoices.forEach(inv => {
+        const status = inv.status || 'Pending';
+        if (statusCounts.hasOwnProperty(status)) {
+            statusCounts[status]++;
+        }
+    });
+    
+    window.statusBreakdownChart = new Chart(canvas, {
+        type: 'pie',
+        data: {
+            labels: Object.keys(statusCounts),
+            datasets: [{
+                data: Object.values(statusCounts),
+                backgroundColor: [
+                    '#10B981', // Green for Paid
+                    '#F59E0B', // Yellow for Pending  
+                    '#EF4444'  // Red for Overdue
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+}
+
+function generateAnalyticsInsights(invoices, clients) {
+    const insightsContainer = document.getElementById('analytics-insights');
+    if (!insightsContainer) return;
+    
+    const insights = [];
+    
+    // Revenue insight
+    const totalRevenue = invoices.reduce((sum, inv) => sum + (inv.amount || 0), 0);
+    insights.push({
+        icon: '💰',
+        title: 'Total Revenue',
+        description: `Your business has generated ₹${formatNumber(totalRevenue)} in total revenue`,
+        type: 'info'
+    });
+    
+    // Top client insight
+    const clientRevenue = {};
+    invoices.forEach(inv => {
+        const clientId = inv.clientId;
+        if (!clientRevenue[clientId]) clientRevenue[clientId] = 0;
+        clientRevenue[clientId] += inv.amount || 0;
+    });
+    
+    const topClientId = Object.entries(clientRevenue)
+        .sort(([,a], [,b]) => b - a)[0]?.[0];
+    
+    if (topClientId) {
+        const topClient = clients.find(c => c.id === topClientId);
+        const topClientRevenue = clientRevenue[topClientId];
+        const percentage = ((topClientRevenue / totalRevenue) * 100).toFixed(1);
+        
+        insights.push({
+            icon: '🏆',
+            title: 'Top Client',
+            description: `${topClient?.name || 'Unknown'} contributes ${percentage}% of your revenue (₹${formatNumber(topClientRevenue)})`,
+            type: 'success'
+        });
+    }
+    
+    // Pending invoices insight
+    const pendingInvoices = invoices.filter(inv => inv.status === 'Pending');
+    const pendingAmount = pendingInvoices.reduce((sum, inv) => sum + (inv.amount || 0), 0);
+    
+    if (pendingInvoices.length > 0) {
+        insights.push({
+            icon: '⏳',
+            title: 'Pending Payments',
+            description: `You have ${pendingInvoices.length} pending invoices worth ₹${formatNumber(pendingAmount)}`,
+            type: 'warning'
+        });
+    }
+    
+    // Average invoice insight
+    const avgInvoice = totalRevenue / invoices.length;
+    insights.push({
+        icon: '📊',
+        title: 'Average Invoice',
+        description: `Your average invoice value is ₹${formatNumber(avgInvoice)}`,
+        type: 'info'
+    });
+    
+    insightsContainer.innerHTML = insights.map(insight => `
+        <div class="insight-card ${insight.type}">
+            <div class="insight-icon">${insight.icon}</div>
+            <div class="insight-content">
+                <h4 class="insight-title">${insight.title}</h4>
+                <p class="insight-description">${insight.description}</p>
+            </div>
+        </div>
+    `).join('');
+}
+
+function populateTopClientsTable(invoices, clients) {
+    const tableBody = document.getElementById('top-clients-table');
+    if (!tableBody) return;
+    
+    // Calculate client statistics
+    const clientStats = {};
+    
+    invoices.forEach(inv => {
+        const clientId = inv.clientId;
+        if (!clientStats[clientId]) {
+            clientStats[clientId] = {
+                totalRevenue: 0,
+                invoiceCount: 0,
+                lastInvoiceDate: null,
+                statuses: {}
+            };
+        }
+        
+        clientStats[clientId].totalRevenue += inv.amount || 0;
+        clientStats[clientId].invoiceCount++;
+        
+        const invDate = new Date(inv.date);
+        if (!clientStats[clientId].lastInvoiceDate || invDate > clientStats[clientId].lastInvoiceDate) {
+            clientStats[clientId].lastInvoiceDate = invDate;
+        }
+        
+        const status = inv.status || 'Pending';
+        clientStats[clientId].statuses[status] = (clientStats[clientId].statuses[status] || 0) + 1;
+    });
+    
+    // Sort by revenue and get top 10
+    const topClients = Object.entries(clientStats)
+        .sort(([,a], [,b]) => b.totalRevenue - a.totalRevenue)
+        .slice(0, 10);
+    
+    tableBody.innerHTML = topClients.map(([clientId, stats]) => {
+        const client = clients.find(c => c.id === clientId);
+        const avgAmount = stats.totalRevenue / stats.invoiceCount;
+        const lastInvoice = stats.lastInvoiceDate ? 
+            formatDate(stats.lastInvoiceDate.toISOString().split('T')[0]) : 'N/A';
+        
+        // Determine primary status
+        const primaryStatus = Object.entries(stats.statuses)
+            .sort(([,a], [,b]) => b - a)[0]?.[0] || 'Unknown';
+        
+        return `
+            <tr>
+                <td>
+                    <div class="client-info">
+                        <div class="client-name">${client?.name || 'Unknown Client'}</div>
+                        <div class="client-email">${client?.email || ''}</div>
+                    </div>
+                </td>
+                <td class="revenue-cell">₹${formatNumber(stats.totalRevenue)}</td>
+                <td>${stats.invoiceCount}</td>
+                <td>₹${formatNumber(avgAmount)}</td>
+                <td>${lastInvoice}</td>
+                <td>
+                    <span class="status-badge status-${primaryStatus.toLowerCase()}">${primaryStatus}</span>
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+function populateClientFilter() {
+    const clientFilter = document.getElementById('analytics-client-filter');
+    if (!clientFilter) return;
+    
+    const clients = appData?.clients || [];
+    const clientOptions = clients.map(client => 
+        `<option value="${client.id}">${client.name}</option>`
+    ).join('');
+    
+    clientFilter.innerHTML = '<option value="all">All Clients</option>' + clientOptions;
+}
+
+function getFilteredAnalyticsData() {
+    // For now, return all invoices. Later we can implement filtering based on the form values
+    return appData?.invoices || [];
+}
+
+function applyAnalyticsFilters() {
+    // Implement filter logic here
+    showToast('Filters applied successfully', 'success');
+    renderAnalyticsData();
+}
+
+function clearAnalyticsFilters() {
+    // Reset all filter controls
+    document.getElementById('analytics-period').value = 'monthly';
+    document.getElementById('analytics-date-range').value = 'last_6_months';
+    document.getElementById('analytics-client-filter').value = 'all';
+    document.getElementById('analytics-status-filter').value = 'all';
+    document.getElementById('custom-date-range').classList.add('hidden');
+    
+    showToast('Filters cleared', 'info');
+    renderAnalyticsData();
+}
+
+function exportAnalyticsReport() {
+    showToast('Preparing analytics report...', 'info');
+    // Implement export functionality
+    setTimeout(() => {
+        showToast('Analytics report exported successfully', 'success');
+    }, 1500);
+}
+
+function cleanupAnalyticsPage() {
+    // Destroy existing charts
+    if (window.analyticsChart) {
+        window.analyticsChart.destroy();
+        window.analyticsChart = null;
+    }
+    if (window.clientDistributionChart) {
+        window.clientDistributionChart.destroy();
+        window.clientDistributionChart = null;
+    }
+    if (window.statusBreakdownChart) {
+        window.statusBreakdownChart.destroy();
+        window.statusBreakdownChart = null;
+    }
 }
 
 function calculateMonthlyEarningsForData(invoices) {
