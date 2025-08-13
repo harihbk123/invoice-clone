@@ -23,9 +23,13 @@ class ExpenseUI {
         this.showToast = showToast;
         this.expenseChart = null;
         this.categoryChart = null;
+        this.currentSort = {
+            field: 'date',
+            direction: 'desc'
+        };
         this.currentFilters = {
-            dateFrom: null,
-            dateTo: null,
+            search: '',
+            dateRange: 'all',
             category: 'all',
             paymentMethod: 'all',
             businessOnly: false
@@ -34,194 +38,524 @@ class ExpenseUI {
 
     getExpensesPageHTML() {
         return `
-            <!-- Enhanced Balance Cards -->
-            <div class="expense-balance-cards" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px;">
-                <div class="balance-card">
-                    <div class="balance-icon">💰</div>
-                    <div class="balance-content">
-                        <h3 id="total-expenses-value">₹0</h3>
-                        <p>Total Expenses</p>
+            <!-- Enhanced Hero Section -->
+            <div class="enhanced-hero-section">
+                <div class="hero-content">
+                    <div class="hero-text">
+                        <h1 class="hero-title">Expense Management</h1>
+                        <p class="hero-subtitle">Track and manage your business expenses efficiently</p>
                     </div>
-                </div>
-                <div class="balance-card">
-                    <div class="balance-icon">📅</div>
-                    <div class="balance-content">
-                        <h3 id="month-expenses-value">₹0</h3>
-                        <p>This Month</p>
-                    </div>
-                </div>
-                <div class="balance-card">
-                    <div class="balance-icon">📊</div>
-                    <div class="balance-content">
-                        <h3 id="avg-expense-value">₹0</h3>
-                        <p>Average Expense</p>
-                    </div>
-                </div>
-                <div class="balance-card">
-                    <div class="balance-icon">🎯</div>
-                    <div class="balance-content">
-                        <h3 id="expense-count">0</h3>
-                        <p>Total Transactions</p>
+                    <div class="hero-actions">
+                        <button class="btn-modern btn-secondary" id="export-expenses-btn">
+                            <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/>
+                                <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/>
+                            </svg>
+                            Export
+                        </button>
+                        <button class="btn-modern btn-primary" id="add-expense-btn">
+                            <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
+                            </svg>
+                            Add Expense
+                        </button>
                     </div>
                 </div>
             </div>
 
-            <!-- Enhanced Filters Section -->
-            <div class="expense-filters-container" style="background: white; border-radius: 12px; padding: 20px; margin-bottom: 24px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
-                <div class="filters-header" style="display: flex; justify-content: between; align-items: center; margin-bottom: 16px;">
-                    <h3 style="margin: 0; color: var(--color-primary);">📋 Expense Filters</h3>
-                    <button class="btn btn--primary" id="add-expense-btn">+ Add Expense</button>
+            <!-- Enhanced Summary Cards -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon stat-icon-primary">
+                        <svg width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M11.251.068a.5.5 0 0 1 .227.58L9.677 6.5H13a.5.5 0 0 1 .364.843l-8 8.5a.5.5 0 0 1-.842-.49L6.323 9.5H3a.5.5 0 0 1-.364-.843l8-8.5a.5.5 0 0 1 .615-.09z"/>
+                        </svg>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-value" id="total-expenses-value">₹18,83,050.52</div>
+                        <div class="stat-label">Total Expenses</div>
+                        <div class="stat-change stat-change-positive">+12.3%</div>
+                    </div>
                 </div>
-                <div class="filters-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; align-items: end;">
-                    <div class="form-group" style="margin: 0;">
-                        <label class="form-label" style="font-size: 12px;">Date Range</label>
-                        <div style="display: flex; gap: 8px;">
-                            <input type="date" class="form-control" id="filter-date-from" style="font-size: 12px;">
-                            <input type="date" class="form-control" id="filter-date-to" style="font-size: 12px;">
+                
+                <div class="stat-card">
+                    <div class="stat-icon stat-icon-secondary">
+                        <svg width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5zM2 2a1 1 0 0 0-1 1v1h14V3a1 1 0 0 0-1-1H2zM1 5v9a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V5H1z"/>
+                        </svg>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-value" id="month-expenses-value">₹65,212.69</div>
+                        <div class="stat-label">This Month</div>
+                        <div class="stat-change stat-change-positive">+8.2%</div>
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-icon stat-icon-accent">
+                        <svg width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M1 2.5A1.5 1.5 0 0 1 2.5 1h3A1.5 1.5 0 0 1 7 2.5v3A1.5 1.5 0 0 1 5.5 7h-3A1.5 1.5 0 0 1 1 5.5v-3zM2.5 2a.5.5 0 0 0-.5.5v3a.5.5 0 0 0 .5.5h3a.5.5 0 0 0 .5-.5v-3a.5.5 0 0 0-.5-.5h-3zm6.5.5A1.5 1.5 0 0 1 10.5 1h3A1.5 1.5 0 0 1 15 2.5v3A1.5 1.5 0 0 1 13.5 7h-3A1.5 1.5 0 0 1 9 5.5v-3zm1.5-.5a.5.5 0 0 0-.5.5v3a.5.5 0 0 0 .5.5h3a.5.5 0 0 0 .5-.5v-3a.5.5 0 0 0-.5-.5h-3zM1 10.5A1.5 1.5 0 0 1 2.5 9h3A1.5 1.5 0 0 1 7 10.5v3A1.5 1.5 0 0 1 5.5 15h-3A1.5 1.5 0 0 1 1 13.5v-3zm1.5-.5a.5.5 0 0 0-.5.5v3a.5.5 0 0 0 .5.5h3a.5.5 0 0 0 .5-.5v-3a.5.5 0 0 0-.5-.5h-3zm6.5.5A1.5 1.5 0 0 1 10.5 9h3a1.5 1.5 0 0 1 1.5 1.5v3a1.5 1.5 0 0 1-1.5 1.5h-3A1.5 1.5 0 0 1 9 13.5v-3zm1.5-.5a.5.5 0 0 0-.5.5v3a.5.5 0 0 0 .5.5h3a.5.5 0 0 0 .5-.5v-3a.5.5 0 0 0-.5-.5h-3z"/>
+                        </svg>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-value" id="avg-expense-value">₹1,04,613.918</div>
+                        <div class="stat-label">Average Expense</div>
+                        <div class="stat-change stat-change-negative">-2.1%</div>
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-icon stat-icon-success">
+                        <svg width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.061L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/>
+                        </svg>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-value" id="expense-count-value">18</div>
+                        <div class="stat-label">Total Transactions</div>
+                        <div class="stat-change stat-change-positive">+15</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts Section -->
+            <div class="charts-container" style="margin-bottom: 32px;">
+                <div class="chart-wrapper">
+                    <div class="chart-header">
+                        <h3>Monthly Expense Trend</h3>
+                        <div class="chart-legend">
+                            <span class="legend-item">
+                                <span class="legend-color" style="background: var(--primary);"></span>
+                                Expenses
+                            </span>
                         </div>
                     </div>
-                    <div class="form-group" style="margin: 0;">
-                        <label class="form-label" style="font-size: 12px;">Category</label>
-                        <select class="form-control" id="filter-category">
-                            <option value="all">All Categories</option>
-                        </select>
+                    <div class="chart-content">
+                        <canvas id="expenseMonthlyChart" width="400" height="200"></canvas>
                     </div>
-                    <div class="form-group" style="margin: 0;">
-                        <label class="form-label" style="font-size: 12px;">Payment Method</label>
-                        <select class="form-control" id="filter-payment-method">
-                            <option value="all">All Methods</option>
-                            <option value="cash">💵 Cash</option>
-                            <option value="upi">📱 UPI</option>
-                            <option value="card">💳 Card</option>
-                            <option value="net_banking">🏦 Net Banking</option>
-                            <option value="wallet">📲 Digital Wallet</option>
-                        </select>
+                </div>
+                
+                <div class="chart-wrapper">
+                    <div class="chart-header">
+                        <h3>Category Breakdown</h3>
+                        <div class="chart-legend">
+                            <span class="legend-item">
+                                <span class="legend-color" style="background: var(--success);"></span>
+                                Categories
+                            </span>
+                        </div>
                     </div>
-                    <div class="form-group" style="margin: 0; display: flex; align-items: center; padding-top: 8px;">
-                        <label class="checkbox-label" style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px;">
-                            <input type="checkbox" id="filter-business-only" style="width: 18px; height: 18px; cursor: pointer;">
-                            Business Only
-                        </label>
-                    </div>
-                    <div class="form-group" style="margin: 0; display: flex; gap: 8px;">
-                        <button class="btn btn--secondary btn--sm" id="apply-filters-btn">Apply</button>
-                        <button class="btn btn--secondary btn--sm" id="clear-filters-btn">Clear</button>
+                    <div class="chart-content">
+                        <canvas id="expenseCategoryChart" width="400" height="200"></canvas>
                     </div>
                 </div>
             </div>
-            
-            <!-- Charts Section -->
-            <div class="expense-charts" style="display: grid; grid-template-columns: 2fr 1fr; gap: 20px; margin-bottom: 24px;">
-                <div class="chart-container">
-                    <h3>Monthly Expense Trend</h3>
-                    <div style="position: relative; height: 300px;">
-                        <canvas id="expenseMonthlyChart"></canvas>
+
+            <!-- Enhanced Table Container -->
+            <div class="enhanced-table-container">
+                <div class="table-header">
+                    <div class="table-title-section">
+                        <h3 class="table-title">Expense Records</h3>
+                        <span class="table-subtitle" id="results-count">18 expenses found</span>
                     </div>
-                </div>
-                <div class="chart-container">
-                    <h3>Category Breakdown</h3>
-                    <div style="position: relative; height: 300px;">
-                        <canvas id="expenseCategoryChart"></canvas>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Expenses Table -->
-            <div class="expenses-table-section">
-                <div class="table-container">
-                    <table class="invoices-table">
-                        <thead>
-                            <tr>
-                                <th>Date</th>
-                                <th>Description</th>
-                                <th>Category</th>
-                                <th>Amount</th>
-                                <th>Payment Method</th>
-                                <th>Vendor</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="expenses-table-body">
-                            <!-- Populated by JavaScript -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-            
-            <!-- Add/Edit Expense Modal -->
-            <div id="expense-modal" class="modal hidden">
-                <div class="modal-overlay" onclick="window.expenseUI.closeExpenseModal()"></div>
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h2 id="expense-modal-title">Add New Expense</h2>
-                        <button class="modal-close" onclick="window.expenseUI.closeExpenseModal()">&times;</button>
-                    </div>
-                    <div class="modal-body">
-                        <form id="expense-form">
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label class="form-label" for="expense-date">Date</label>
-                                    <input type="date" class="form-control" id="expense-date" required>
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label" for="expense-amount">Amount (₹)</label>
-                                    <input type="number" class="form-control" id="expense-amount" min="0" step="0.01" required>
-                                </div>
+                    
+                    <!-- Advanced Filters -->
+                    <div class="filters-section">
+                        <div class="search-filter">
+                            <div class="filter-group-label">Search</div>
+                            <div class="search-input-wrapper">
+                                <svg class="search-icon" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                    <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>
+                                </svg>
+                                <input type="text" id="expense-search-input" class="search-input" placeholder="Search expenses...">
                             </div>
-                            
-                            <div class="form-group">
-                                <label class="form-label" for="expense-description">Description</label>
-                                <input type="text" class="form-control" id="expense-description" required>
-                            </div>
-                            
-                            <div class="form-row">
-                                    <div class="form-group">
-                                        <label class="form-label" for="expense-category">Category</label>
-                                        <div style="display: flex; gap: 8px; align-items: end;">
-                                            <select class="form-control" id="expense-category" required style="flex: 1;">
-                                                <option value="">Select Category</option>
-                                            </select>
-                                            <button type="button" class="btn btn--secondary btn--sm" id="add-category-btn" style="padding: 8px 12px; white-space: nowrap;">+ Add</button>
-                                        </div>
-                                    </div>
-                                <div class="form-group">
-                                    <label class="form-label" for="expense-payment-method">Payment Method</label>
-                                    <select class="form-control" id="expense-payment-method" required>
-                                        <option value="">Select Method</option>
-                                        <option value="cash">💵 Cash</option>
-                                        <option value="upi">📱 UPI</option>
-                                        <option value="card">💳 Card</option>
-                                        <option value="net_banking">🏦 Net Banking</option>
-                                        <option value="wallet">📲 Digital Wallet</option>
+                        </div>
+                        
+                        <div class="filter-controls">
+                            <div class="dropdown-filters">
+                                <div class="filter-group">
+                                    <div class="filter-group-label">Date Range</div>
+                                    <select id="date-filter" class="filter-select">
+                                        <option value="all">All Time</option>
+                                        <option value="today">Today</option>
+                                        <option value="week">This Week</option>
+                                        <option value="month">This Month</option>
+                                        <option value="quarter">This Quarter</option>
+                                        <option value="year">This Year</option>
+                                        <option value="custom">Custom Range</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="filter-group">
+                                    <div class="filter-group-label">Category</div>
+                                    <select id="category-filter" class="filter-select">
+                                        <option value="all">All Categories</option>
+                                        <option value="travel">Travel</option>
+                                        <option value="office">Office Supplies</option>
+                                        <option value="marketing">Marketing</option>
+                                        <option value="food">Food & Dining</option>
+                                        <option value="utilities">Utilities</option>
+                                        <option value="professional">Professional Services</option>
+                                        <option value="miscellaneous">Miscellaneous</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="filter-group">
+                                    <div class="filter-group-label">Payment Method</div>
+                                    <select id="payment-filter" class="filter-select">
+                                        <option value="all">All Methods</option>
+                                        <option value="cash">Cash</option>
+                                        <option value="upi">UPI</option>
+                                        <option value="card">Credit Card</option>
+                                        <option value="net_banking">Net Banking</option>
+                                        <option value="wallet">Digital Wallet</option>
                                     </select>
                                 </div>
                             </div>
                             
-                            <div class="form-group">
-                                <label class="form-label" for="expense-vendor">Vendor/Store Name</label>
-                                <input type="text" class="form-control" id="expense-vendor" placeholder="e.g., McDonald's, Amazon">
+                            <div class="date-range-filters" id="date-range-filters">
+                                <div class="filter-group">
+                                    <div class="filter-group-label">From Date</div>
+                                    <input type="date" id="from-date-filter" class="date-input">
+                                </div>
+                                <div class="filter-group">
+                                    <div class="filter-group-label">To Date</div>
+                                    <input type="date" id="to-date-filter" class="date-input">
+                                </div>
                             </div>
                             
-                            <div class="form-group">
-                                <label class="form-label" for="expense-notes">Notes</label>
-                                <textarea class="form-control" id="expense-notes" rows="2" placeholder="Additional details..."></textarea>
+                            <div class="amount-range-filters">
+                                <div class="filter-group">
+                                    <div class="filter-group-label">Min Amount</div>
+                                    <input type="number" id="min-amount" class="amount-input" placeholder="0">
+                                </div>
+                                <div class="filter-group">
+                                    <div class="filter-group-label">Max Amount</div>
+                                    <input type="number" id="max-amount" class="amount-input" placeholder="∞">
+                                </div>
                             </div>
-                            
-                            <div class="form-row">
-                                <label class="checkbox-label" style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-                                    <input type="checkbox" id="expense-business" checked style="width: 18px; height: 18px;">
-                                    Business Expense
-                                </label>
-                                <label class="checkbox-label" style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-                                    <input type="checkbox" id="expense-tax-deductible" style="width: 18px; height: 18px;">
-                                    Tax Deductible
-                                </label>
+                        </div>
+                        
+                        <div class="filter-actions">
+                            <button class="btn-filter-clear" id="clear-filters-btn">
+                                <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                    <path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854Z"/>
+                                </svg>
+                                Clear All Filters
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Bulk Actions -->
+                    <div class="bulk-actions" id="bulk-actions" style="display: none;">
+                        <button class="btn-bulk-delete" id="bulk-delete-btn">
+                            <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M6.5 1h3a.5.5 0 0 1 .5.5v1H6v-1a.5.5 0 0 1 .5-.5ZM11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3A1.5 1.5 0 0 0 5 1.5v1H2.506a.58.58 0 0 0-.01 0H1.5a.5.5 0 0 0 0 1h.538l.853 10.66A2 2 0 0 0 4.885 16h6.23a2 2 0 0 0 1.994-1.84l.853-10.66h.538a.5.5 0 0 0 0-1h-.995a.59.59 0 0 0-.01 0H11Zm1.958 1-.846 10.58a1 1 0 0 1-.997.92h-6.23a1 1 0 0 1-.997-.92L3.042 3.5h9.916Zm-7.487 1a.5.5 0 0 1 .528.47l.5 8.5a.5.5 0 0 1-.998.06L5 5.03a.5.5 0 0 1 .47-.53Zm5.058 0a.5.5 0 0 1 .47.53l-.5 8.5a.5.5 0 1 1-.998-.06l.5-8.5a.5.5 0 0 1 .528-.47ZM8 4.5a.5.5 0 0 1 .5.5v8.5a.5.5 0 0 1-1 0V5a.5.5 0 0 1 .5-.5Z"/>
+                            </svg>
+                            Delete Selected
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Enhanced Table -->
+                <div class="enhanced-table-wrapper">
+                    <table class="enhanced-table">
+                        <thead>
+                            <tr>
+                                <th class="checkbox-column">
+                                    <input type="checkbox" id="select-all-expenses" class="table-checkbox">
+                                </th>
+                                <th class="sortable" data-sort="date">
+                                    <span>Date</span>
+                                    <svg class="sort-icon" width="12" height="12" fill="currentColor" viewBox="0 0 16 16">
+                                        <path d="M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z"/>
+                                    </svg>
+                                </th>
+                                <th class="sortable" data-sort="description">
+                                    <span>Description</span>
+                                    <svg class="sort-icon" width="12" height="12" fill="currentColor" viewBox="0 0 16 16">
+                                        <path d="M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z"/>
+                                    </svg>
+                                </th>
+                                <th class="sortable" data-sort="category">
+                                    <span>Category</span>
+                                    <svg class="sort-icon" width="12" height="12" fill="currentColor" viewBox="0 0 16 16">
+                                        <path d="M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z"/>
+                                    </svg>
+                                </th>
+                                <th class="sortable" data-sort="amount">
+                                    <span>Amount</span>
+                                    <svg class="sort-icon" width="12" height="12" fill="currentColor" viewBox="0 0 16 16">
+                                        <path d="M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z"/>
+                                    </svg>
+                                </th>
+                                <th class="sortable" data-sort="payment">
+                                    <span>Payment Method</span>
+                                    <svg class="sort-icon" width="12" height="12" fill="currentColor" viewBox="0 0 16 16">
+                                        <path d="M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z"/>
+                                    </svg>
+                                </th>
+                                <th class="sortable" data-sort="vendor">
+                                    <span>Vendor</span>
+                                    <svg class="sort-icon" width="12" height="12" fill="currentColor" viewBox="0 0 16 16">
+                                        <path d="M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z"/>
+                                    </svg>
+                                </th>
+                                <th class="actions-column">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="expenses-table-body">
+                            <!-- Expense rows will be populated here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Modern Add/Edit Expense Modal -->
+            <div id="expense-modal" class="modal hidden">
+                <div class="modal-content modern-modal">
+                    <div class="modal-header modern-header">
+                        <div class="modal-title-section">
+                            <h3 id="expense-modal-title" class="modal-title">Add New Expense</h3>
+                            <p class="modal-subtitle">Track your business expenses efficiently</p>
+                        </div>
+                        <button class="modal-close modern-close" onclick="closeExpenseModal()">
+                            <svg width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854Z"/>
+                            </svg>
+                        </button>
+                    </div>
+                    
+                    <div class="modal-body modern-body">
+                        <form id="expense-form" class="modern-form">
+                            <div class="form-grid modern-grid">
+                                <!-- Row 1: Date and Amount -->
+                                <div class="form-row">
+                                    <div class="form-field">
+                                        <label class="form-label modern-label">
+                                            <span class="label-text">Date</span>
+                                            <span class="label-required">*</span>
+                                        </label>
+                                        <div class="input-wrapper">
+                                            <svg class="input-icon" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                                <path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5zM2 2a1 1 0 0 0-1 1v1h14V3a1 1 0 0 0-1-1H2zM1 5v9a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V5H1z"/>
+                                            </svg>
+                                            <input type="date" id="expense-date" class="form-control modern-input" required>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="form-field">
+                                        <label class="form-label modern-label">
+                                            <span class="label-text">Amount</span>
+                                            <span class="label-required">*</span>
+                                        </label>
+                                        <div class="input-wrapper">
+                                            <svg class="input-icon" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                                <path d="M4 10.781c.148 1.667 1.513 2.85 3.591 3.003V15h1.043v-1.216c2.27-.179 3.678-1.438 3.678-3.3 0-1.59-.947-2.51-2.956-3.028l-.722-.187V3.467c1.122.11 1.879.714 2.07 1.616h1.47c-.166-1.6-1.54-2.748-3.54-2.875V1H7.591v1.233c-1.939.23-3.27 1.472-3.27 3.156 0 1.454.966 2.483 2.661 2.917l.61.162v4.031c-1.149-.17-1.94-.8-2.131-1.718H4zm3.391-3.836c-1.043-.263-1.6-.825-1.6-1.616 0-.944.704-1.641 1.8-1.828v3.495l-.2-.05zm1.591 1.872c1.287.323 1.852.859 1.852 1.769 0 1.097-.826 1.828-2.2 1.939V8.73l.348.086z"/>
+                                            </svg>
+                                            <input type="number" id="expense-amount" class="form-control modern-input" step="0.01" placeholder="0.00" required>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Row 2: Category and Payment Method -->
+                                <div class="form-row">
+                                    <div class="form-field">
+                                        <label class="form-label modern-label">
+                                            <span class="label-text">Category</span>
+                                            <span class="label-required">*</span>
+                                        </label>
+                                        <div class="category-input-wrapper">
+                                            <select id="expense-category" class="form-control modern-select" required>
+                                                <option value="">Select Category</option>
+                                            </select>
+                                            <button type="button" class="add-category-btn" onclick="window.expenseUI.openAddCategoryModal()">
+                                                <svg width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+                                                    <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
+                                                </svg>
+                                                Add New
+                                            </button>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="form-field">
+                                        <label class="form-label modern-label">
+                                            <span class="label-text">Payment Method</span>
+                                            <span class="label-required">*</span>
+                                        </label>
+                                        <div class="input-wrapper">
+                                            <svg class="input-icon" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                                <path d="M11 5.5a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1-.5-.5v-1zM4.085 5H11a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h.085zM4 6v8h7V6H4z"/>
+                                            </svg>
+                                            <select id="expense-payment-method" class="form-control modern-select" required>
+                                                <option value="">Select Payment Method</option>
+                                                <option value="cash">💵 Cash</option>
+                                                <option value="upi">📱 UPI</option>
+                                                <option value="card">💳 Credit/Debit Card</option>
+                                                <option value="net_banking">🏦 Net Banking</option>
+                                                <option value="wallet">📲 Digital Wallet</option>
+                                                <option value="bank_transfer">🏦 Bank Transfer</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Row 3: Description -->
+                                <div class="form-field full-width">
+                                    <label class="form-label modern-label">
+                                        <span class="label-text">Description</span>
+                                        <span class="label-required">*</span>
+                                    </label>
+                                    <div class="input-wrapper">
+                                        <svg class="input-icon" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                            <path d="M5 1a2 2 0 0 0-2 2v1h10V3a2 2 0 0 0-2-2H5zM3 5v9a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V5H3z"/>
+                                        </svg>
+                                        <input type="text" id="expense-description" class="form-control modern-input" placeholder="Brief description of the expense" required>
+                                    </div>
+                                </div>
+                                
+                                <!-- Row 4: Vendor -->
+                                <div class="form-field full-width">
+                                    <label class="form-label modern-label">
+                                        <span class="label-text">Vendor/Supplier</span>
+                                        <span class="label-optional">Optional</span>
+                                    </label>
+                                    <div class="input-wrapper">
+                                        <svg class="input-icon" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                            <path d="M7 14s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1H7zm4-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/>
+                                        </svg>
+                                        <input type="text" id="expense-vendor" class="form-control modern-input" placeholder="Company or person name">
+                                    </div>
+                                </div>
+                                
+                                <!-- Row 5: Notes -->
+                                <div class="form-field full-width">
+                                    <label class="form-label modern-label">
+                                        <span class="label-text">Additional Notes</span>
+                                        <span class="label-optional">Optional</span>
+                                    </label>
+                                    <div class="textarea-wrapper">
+                                        <textarea id="expense-notes" class="form-control modern-textarea" rows="3" placeholder="Any additional details about this expense"></textarea>
+                                    </div>
+                                </div>
+                                
+                                <!-- Row 6: Checkboxes -->
+                                <div class="form-row checkbox-row">
+                                    <div class="form-field">
+                                        <label class="modern-checkbox">
+                                            <input type="checkbox" id="expense-business" checked>
+                                            <span class="checkbox-indicator"></span>
+                                            <span class="checkbox-label">Business Expense</span>
+                                        </label>
+                                    </div>
+                                    
+                                    <div class="form-field">
+                                        <label class="modern-checkbox">
+                                            <input type="checkbox" id="expense-tax-deductible">
+                                            <span class="checkbox-indicator"></span>
+                                            <span class="checkbox-label">Tax Deductible</span>
+                                        </label>
+                                    </div>
+                                </div>
                             </div>
                         </form>
                     </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn--secondary" onclick="window.expenseUI.closeExpenseModal()">Cancel</button>
-                        <button type="button" class="btn btn--primary" id="save-expense-btn">Save Expense</button>
+                    
+                    <div class="modal-footer modern-footer">
+                        <button type="button" class="btn-modern btn-secondary" onclick="closeExpenseModal()">
+                            <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854Z"/>
+                            </svg>
+                            Cancel
+                        </button>
+                        <button type="submit" class="btn-modern btn-primary" onclick="saveExpense()">
+                            <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M12.736 3.97a.733.733 0 0 1 1.047 0c.286.289.29.756.01 1.05L7.88 12.01a.733.733 0 0 1-1.065.02L3.217 8.384a.757.757 0 0 1 0-1.06.733.733 0 0 1 1.047 0l3.052 3.093 5.4-6.425a.247.247 0 0 1 .02-.022Z"/>
+                            </svg>
+                            Save Expense
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Add Category Modal -->
+            <div id="add-category-modal" class="modal hidden">
+                <div class="modal-content modern-modal small-modal">
+                    <div class="modal-header modern-header">
+                        <div class="modal-title-section">
+                            <h3 class="modal-title">Add New Category</h3>
+                            <p class="modal-subtitle">Create a custom expense category</p>
+                        </div>
+                        <button class="modal-close modern-close" onclick="window.expenseUI.closeAddCategoryModal()">
+                            <svg width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854Z"/>
+                            </svg>
+                        </button>
+                    </div>
+                    
+                    <div class="modal-body modern-body">
+                        <form id="add-category-form" class="modern-form">
+                            <div class="form-field">
+                                <label class="form-label modern-label">
+                                    <span class="label-text">Category Name</span>
+                                    <span class="label-required">*</span>
+                                </label>
+                                <div class="input-wrapper">
+                                    <input type="text" id="new-category-name" class="form-control modern-input" placeholder="e.g., Office Supplies" required>
+                                </div>
+                            </div>
+                            
+                            <div class="form-field">
+                                <label class="form-label modern-label">
+                                    <span class="label-text">Icon</span>
+                                    <span class="label-required">*</span>
+                                </label>
+                                <div class="icon-grid">
+                                    <button type="button" class="icon-option" data-icon="📊" onclick="selectIcon('📊')">📊</button>
+                                    <button type="button" class="icon-option" data-icon="🏢" onclick="selectIcon('🏢')">🏢</button>
+                                    <button type="button" class="icon-option" data-icon="🚗" onclick="selectIcon('🚗')">🚗</button>
+                                    <button type="button" class="icon-option" data-icon="💡" onclick="selectIcon('💡')">💡</button>
+                                    <button type="button" class="icon-option" data-icon="📱" onclick="selectIcon('📱')">📱</button>
+                                    <button type="button" class="icon-option" data-icon="🎯" onclick="selectIcon('🎯')">🎯</button>
+                                    <button type="button" class="icon-option" data-icon="📚" onclick="selectIcon('📚')">📚</button>
+                                    <button type="button" class="icon-option" data-icon="🎨" onclick="selectIcon('🎨')">🎨</button>
+                                </div>
+                                <input type="hidden" id="new-category-icon" required>
+                            </div>
+                            
+                            <div class="form-field">
+                                <label class="form-label modern-label">
+                                    <span class="label-text">Color</span>
+                                    <span class="label-required">*</span>
+                                </label>
+                                <div class="color-grid">
+                                    <button type="button" class="color-option" data-color="#3B82F6" style="background-color: #3B82F6" onclick="selectColor('#3B82F6')"></button>
+                                    <button type="button" class="color-option" data-color="#10B981" style="background-color: #10B981" onclick="selectColor('#10B981')"></button>
+                                    <button type="button" class="color-option" data-color="#F59E0B" style="background-color: #F59E0B" onclick="selectColor('#F59E0B')"></button>
+                                    <button type="button" class="color-option" data-color="#EF4444" style="background-color: #EF4444" onclick="selectColor('#EF4444')"></button>
+                                    <button type="button" class="color-option" data-color="#8B5CF6" style="background-color: #8B5CF6" onclick="selectColor('#8B5CF6')"></button>
+                                    <button type="button" class="color-option" data-color="#F97316" style="background-color: #F97316" onclick="selectColor('#F97316')"></button>
+                                    <button type="button" class="color-option" data-color="#06B6D4" style="background-color: #06B6D4" onclick="selectColor('#06B6D4')"></button>
+                                    <button type="button" class="color-option" data-color="#84CC16" style="background-color: #84CC16" onclick="selectColor('#84CC16')"></button>
+                                </div>
+                                <input type="hidden" id="new-category-color" required>
+                            </div>
+                        </form>
+                    </div>
+                    
+                    <div class="modal-footer modern-footer">
+                        <button type="button" class="btn-modern btn-secondary" onclick="window.expenseUI.closeAddCategoryModal()">
+                            <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854Z"/>
+                            </svg>
+                            Cancel
+                        </button>
+                        <button type="submit" class="btn-modern btn-primary" onclick="window.expenseUI.saveNewCategory()">
+                            <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
+                            </svg>
+                            Add Category
+                        </button>
                     </div>
                 </div>
             </div>
@@ -234,7 +568,19 @@ class ExpenseUI {
         if (expensesPage) {
             expensesPage.innerHTML = this.getExpensesPageHTML();
             this.attachEventListeners();
-            this.renderExpenses();
+            
+            // Ensure expense manager has data before rendering
+            if (this.expenseManager && this.expenseManager.expenses && this.expenseManager.expenses.length > 0) {
+                console.log(`Found ${this.expenseManager.expenses.length} expenses, rendering...`);
+                this.renderExpenses();
+            } else {
+                console.log('No expenses found, initializing with sample data...');
+                // Force load sample data if needed
+                if (this.expenseManager) {
+                    this.expenseManager.expenses = this.expenseManager.getSampleExpenses();
+                    this.renderExpenses();
+                }
+            }
         }
     }
 
@@ -245,22 +591,384 @@ class ExpenseUI {
             addExpenseBtn.addEventListener('click', () => this.openAddExpenseModal());
         }
 
-        // Export button
-        const exportBtn = document.getElementById('export-expenses');
+        // Export button (updated ID)
+        const exportBtn = document.getElementById('export-expenses-btn');
         if (exportBtn) {
             exportBtn.addEventListener('click', () => this.exportExpenses());
         }
 
-        // Filter buttons
-        const applyFiltersBtn = document.getElementById('apply-filters-btn');
-        if (applyFiltersBtn) {
-            applyFiltersBtn.addEventListener('click', () => this.applyFilters());
+        // Search functionality
+        const searchInput = document.getElementById('expense-search-input');
+        if (searchInput) {
+            searchInput.addEventListener('input', (e) => this.handleSearch(e.target.value));
         }
 
+        // Filter controls
+        const dateFilter = document.getElementById('date-filter');
+        const categoryFilter = document.getElementById('category-filter');
+        const paymentFilter = document.getElementById('payment-filter');
+        const fromDateFilter = document.getElementById('from-date-filter');
+        const toDateFilter = document.getElementById('to-date-filter');
+        const minAmountFilter = document.getElementById('min-amount');
+        const maxAmountFilter = document.getElementById('max-amount');
+
+        if (dateFilter) {
+            dateFilter.addEventListener('change', (e) => {
+                const dateRangeFilters = document.getElementById('date-range-filters');
+                if (e.target.value === 'custom') {
+                    // Show date range inputs
+                    if (dateRangeFilters) {
+                        dateRangeFilters.classList.add('show');
+                    }
+                } else {
+                    // Hide date range inputs
+                    if (dateRangeFilters) {
+                        dateRangeFilters.classList.remove('show');
+                    }
+                }
+                this.applyFilters();
+            });
+        }
+        if (categoryFilter) {
+            categoryFilter.addEventListener('change', () => this.applyFilters());
+        }
+        if (paymentFilter) {
+            paymentFilter.addEventListener('change', () => this.applyFilters());
+        }
+        if (fromDateFilter) {
+            fromDateFilter.addEventListener('change', () => this.applyFilters());
+        }
+        if (toDateFilter) {
+            toDateFilter.addEventListener('change', () => this.applyFilters());
+        }
+        if (minAmountFilter) {
+            minAmountFilter.addEventListener('input', () => this.applyFilters());
+        }
+        if (maxAmountFilter) {
+            maxAmountFilter.addEventListener('input', () => this.applyFilters());
+        }
+
+        // Clear filters button
         const clearFiltersBtn = document.getElementById('clear-filters-btn');
         if (clearFiltersBtn) {
             clearFiltersBtn.addEventListener('click', () => this.clearFilters());
         }
+
+        // Table sorting
+        const sortableHeaders = document.querySelectorAll('.sortable');
+        sortableHeaders.forEach(header => {
+            header.addEventListener('click', () => {
+                const sortBy = header.dataset.sort;
+                this.handleSort(sortBy);
+            });
+        });
+
+        // Select all checkbox
+        const selectAllCheckbox = document.getElementById('select-all-expenses');
+        if (selectAllCheckbox) {
+            selectAllCheckbox.addEventListener('change', (e) => this.handleSelectAll(e.target.checked));
+        }
+
+        // Modal functionality
+        this.attachModalEventListeners();
+
+        // Close dropdown menus when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.action-dropdown')) {
+                document.querySelectorAll('.action-menu').forEach(menu => {
+                    menu.style.display = 'none';
+                });
+            }
+        });
+    }
+
+    handleSearch(searchTerm) {
+        this.currentFilters.search = searchTerm.toLowerCase();
+        this.renderFilteredExpenses();
+    }
+
+    handleSort(sortBy) {
+        if (this.currentSort.field === sortBy) {
+            this.currentSort.direction = this.currentSort.direction === 'asc' ? 'desc' : 'asc';
+        } else {
+            this.currentSort.field = sortBy;
+            this.currentSort.direction = 'asc';
+        }
+        
+        // Update sort indicators in table headers
+        this.updateSortIndicators();
+        this.renderFilteredExpenses();
+    }
+
+    updateSortIndicators() {
+        // Reset all headers
+        document.querySelectorAll('.modern-table th').forEach(th => {
+            th.classList.remove('sort-asc', 'sort-desc');
+        });
+        
+        // Add sort class to current header
+        const currentHeader = document.querySelector(`[data-sort="${this.currentSort.field}"]`);
+        if (currentHeader) {
+            currentHeader.classList.add(this.currentSort.direction === 'asc' ? 'sort-asc' : 'sort-desc');
+        }
+    }
+
+    renderFilteredExpenses() {
+        let filteredExpenses = [...this.expenseManager.expenses];
+
+        // Apply search filter
+        if (this.currentFilters.search) {
+            filteredExpenses = filteredExpenses.filter(expense =>
+                expense.description.toLowerCase().includes(this.currentFilters.search) ||
+                expense.categoryName.toLowerCase().includes(this.currentFilters.search) ||
+                expense.vendorName.toLowerCase().includes(this.currentFilters.search)
+            );
+        }
+
+        // Apply date range filter
+        if (this.currentFilters.dateRange === 'custom' && (this.currentFilters.fromDate || this.currentFilters.toDate)) {
+            filteredExpenses = filteredExpenses.filter(expense => {
+                const expenseDate = new Date(expense.date);
+                let isValid = true;
+                
+                if (this.currentFilters.fromDate) {
+                    isValid = isValid && expenseDate >= new Date(this.currentFilters.fromDate);
+                }
+                if (this.currentFilters.toDate) {
+                    isValid = isValid && expenseDate <= new Date(this.currentFilters.toDate);
+                }
+                
+                return isValid;
+            });
+        } else if (this.currentFilters.dateRange !== 'all') {
+            // Apply predefined date filter
+            const now = new Date();
+            const filterDate = new Date();
+            
+            switch (this.currentFilters.dateRange) {
+                case 'today':
+                    filterDate.setHours(0, 0, 0, 0);
+                    filteredExpenses = filteredExpenses.filter(expense => {
+                        const expenseDate = new Date(expense.date);
+                        expenseDate.setHours(0, 0, 0, 0);
+                        return expenseDate.getTime() === filterDate.getTime();
+                    });
+                    break;
+                case 'week':
+                    filterDate.setDate(now.getDate() - 7);
+                    filteredExpenses = filteredExpenses.filter(expense =>
+                        new Date(expense.date) >= filterDate
+                    );
+                    break;
+                case 'month':
+                    filterDate.setMonth(now.getMonth() - 1);
+                    filteredExpenses = filteredExpenses.filter(expense =>
+                        new Date(expense.date) >= filterDate
+                    );
+                    break;
+                case 'quarter':
+                    filterDate.setMonth(now.getMonth() - 3);
+                    filteredExpenses = filteredExpenses.filter(expense =>
+                        new Date(expense.date) >= filterDate
+                    );
+                    break;
+                case 'year':
+                    filterDate.setFullYear(now.getFullYear() - 1);
+                    filteredExpenses = filteredExpenses.filter(expense =>
+                        new Date(expense.date) >= filterDate
+                    );
+                    break;
+            }
+        }
+
+        // Apply amount range filter
+        if (this.currentFilters.minAmount > 0 || this.currentFilters.maxAmount < Infinity) {
+            filteredExpenses = filteredExpenses.filter(expense => {
+                const amount = parseFloat(expense.amount);
+                return amount >= this.currentFilters.minAmount && amount <= this.currentFilters.maxAmount;
+            });
+        }
+
+        // Apply category filter
+        if (this.currentFilters.category !== 'all') {
+            filteredExpenses = filteredExpenses.filter(expense =>
+                expense.categoryName === this.currentFilters.category
+            );
+        }
+
+        // Apply payment method filter
+        if (this.currentFilters.paymentMethod !== 'all') {
+            filteredExpenses = filteredExpenses.filter(expense =>
+                expense.paymentMethod === this.currentFilters.paymentMethod
+            );
+        }
+
+        // Apply sorting
+        filteredExpenses.sort((a, b) => {
+            let aValue = a[this.currentSort.field];
+            let bValue = b[this.currentSort.field];
+
+            if (this.currentSort.field === 'amount') {
+                aValue = parseFloat(aValue);
+                bValue = parseFloat(bValue);
+            } else if (this.currentSort.field === 'date') {
+                aValue = new Date(aValue);
+                bValue = new Date(bValue);
+            } else {
+                aValue = aValue.toString().toLowerCase();
+                bValue = bValue.toString().toLowerCase();
+            }
+
+            if (aValue < bValue) return this.currentSort.direction === 'asc' ? -1 : 1;
+            if (aValue > bValue) return this.currentSort.direction === 'asc' ? 1 : -1;
+            return 0;
+        });
+
+        this.renderExpenseTable(filteredExpenses);
+        this.updateResultsCount(filteredExpenses.length);
+    }
+
+    clearFilters() {
+        // Reset all filter values
+        const dateFilter = document.getElementById('date-filter');
+        const categoryFilter = document.getElementById('category-filter');
+        const paymentFilter = document.getElementById('payment-filter');
+        const minAmount = document.getElementById('min-amount');
+        const maxAmount = document.getElementById('max-amount');
+        const searchInput = document.getElementById('expense-search-input');
+
+        if (dateFilter) dateFilter.value = 'all';
+        if (categoryFilter) categoryFilter.value = 'all';
+        if (paymentFilter) paymentFilter.value = 'all';
+        if (minAmount) minAmount.value = '';
+        if (maxAmount) maxAmount.value = '';
+        if (searchInput) searchInput.value = '';
+
+        // Reset filter state
+        this.currentFilters = {
+            search: '',
+            dateRange: 'all',
+            category: 'all',
+            paymentMethod: 'all',
+            businessOnly: false
+        };
+
+        this.renderFilteredExpenses();
+    }
+
+    handleSelectAll(checked) {
+        const checkboxes = document.querySelectorAll('.table-checkbox[data-expense-id]');
+        checkboxes.forEach(checkbox => {
+            checkbox.checked = checked;
+        });
+        this.updateBulkActions();
+    }
+
+    updateBulkActions() {
+        const checkedBoxes = document.querySelectorAll('.table-checkbox[data-expense-id]:checked');
+        const bulkDeleteBtn = document.getElementById('bulk-delete-btn');
+        
+        if (bulkDeleteBtn) {
+            bulkDeleteBtn.style.display = checkedBoxes.length > 0 ? 'inline-flex' : 'none';
+        }
+    }
+
+    handleBulkDelete() {
+        const checkedBoxes = document.querySelectorAll('.table-checkbox[data-expense-id]:checked');
+        if (checkedBoxes.length === 0) return;
+
+        if (confirm(`Are you sure you want to delete ${checkedBoxes.length} selected expense(s)?`)) {
+            checkedBoxes.forEach(checkbox => {
+                const expenseId = checkbox.getAttribute('data-expense-id');
+                this.deleteExpense(expenseId);
+            });
+        }
+    }
+
+    updateResultsCount(count) {
+        const countElement = document.getElementById('results-count');
+        if (countElement) {
+            countElement.textContent = `${count} expense${count !== 1 ? 's' : ''} found`;
+        }
+    }
+
+    renderExpenseTable(expenses) {
+        // This method calls the existing renderExpensesTable
+        this.renderExpensesTable(expenses);
+    }
+
+    updateResultsCount(count) {
+        const resultsCountElement = document.getElementById('expense-results-count');
+        if (resultsCountElement) {
+            resultsCountElement.textContent = `${count} expense${count !== 1 ? 's' : ''}`;
+        }
+    }
+
+    duplicateExpense(expenseId) {
+        const expense = this.expenseManager.expenses.find(e => e.id === expenseId);
+        if (!expense) {
+            this.showToast('Expense not found', 'error');
+            return;
+        }
+        
+        // Clear editing state and populate form with expense data
+        this.expenseManager.editingExpenseId = null;
+        document.getElementById('expense-modal-title').textContent = 'Duplicate Expense';
+        
+        // Populate form with copied data
+        document.getElementById('expense-date').value = new Date().toISOString().split('T')[0]; // Today's date
+        document.getElementById('expense-amount').value = expense.amount;
+        document.getElementById('expense-description').value = expense.description + ' (Copy)';
+        document.getElementById('expense-category').value = expense.categoryName || '';
+        document.getElementById('expense-payment-method').value = expense.paymentMethod || '';
+        document.getElementById('expense-vendor').value = expense.vendorName || '';
+        document.getElementById('expense-notes').value = expense.notes || '';
+        document.getElementById('expense-business').checked = expense.isBusinessExpense;
+        document.getElementById('expense-tax-deductible').checked = expense.taxDeductible;
+        
+        document.getElementById('expense-modal').classList.remove('hidden');
+    }
+
+    viewReceipt(expenseId) {
+        const expense = this.expenseManager.expenses.find(e => e.id === expenseId);
+        if (!expense) {
+            this.showToast('Expense not found', 'error');
+            return;
+        }
+        
+        if (!expense.receipt) {
+            this.showToast('No receipt attached to this expense', 'info');
+            return;
+        }
+        
+        // Create a modal to view the receipt
+        const receiptModal = document.createElement('div');
+        receiptModal.className = 'modal';
+        receiptModal.innerHTML = `
+            <div class="modal-content receipt-modal">
+                <div class="modal-header">
+                    <h3>Receipt - ${expense.description}</h3>
+                    <button class="modal-close" onclick="this.closest('.modal').remove()">×</button>
+                </div>
+                <div class="modal-body">
+                    <div class="receipt-details">
+                        <p><strong>Date:</strong> ${this.formatDate(expense.date)}</p>
+                        <p><strong>Amount:</strong> ₹${this.formatNumber(expense.amount)}</p>
+                        <p><strong>Category:</strong> ${expense.categoryName}</p>
+                        <p><strong>Vendor:</strong> ${expense.vendorName || 'N/A'}</p>
+                    </div>
+                    <div class="receipt-image">
+                        <img src="${expense.receipt}" alt="Receipt" style="max-width: 100%; height: auto; border-radius: 8px;">
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(receiptModal);
+        receiptModal.classList.remove('hidden');
+    }
+
+    attachModalEventListeners() {
 
         // Save expense button
         const saveExpenseBtn = document.getElementById('save-expense-btn');
@@ -334,14 +1042,30 @@ class ExpenseUI {
     }
 
     renderExpenses() {
+        console.log('🎨 Rendering expenses...');
+        console.log('ExpenseManager exists:', !!this.expenseManager);
+        console.log('ExpenseManager expenses:', this.expenseManager?.expenses?.length || 0);
+        
         this.updateSummaryCards();
-        const filteredExpenses = this.getFilteredExpenses();
-        this.renderExpensesTable(filteredExpenses);
-        this.renderCharts(filteredExpenses);
+        this.populateFilterDropdowns();
+        this.renderFilteredExpenses();
+        this.renderCharts(this.expenseManager?.expenses || []);
+    }
+
+    populateFilterDropdowns() {
+        // Populate category filter
+        const categoryFilter = document.getElementById('category-filter');
+        if (categoryFilter && this.expenseManager) {
+            const categories = [...new Set(this.expenseManager.expenses.map(e => e.categoryName))];
+            categoryFilter.innerHTML = '<option value="all">All Categories</option>';
+            categories.forEach(category => {
+                categoryFilter.innerHTML += `<option value="${category}">${category}</option>`;
+            });
+        }
     }
 
     updateSummaryCards() {
-        const expenses = this.expenseManager.expenses || [];
+        const expenses = this.expenseManager?.expenses || [];
         const now = new Date();
         const currentMonth = now.getMonth();
         const currentYear = now.getFullYear();
@@ -354,14 +1078,20 @@ class ExpenseUI {
         
         const avgExpense = expenses.length > 0 ? totalExpenses / expenses.length : 0;
         
-        document.getElementById('total-expenses-value').textContent = `₹${this.formatNumber(totalExpenses)}`;
-        document.getElementById('month-expenses-value').textContent = `₹${this.formatNumber(monthExpenses)}`;
-        document.getElementById('avg-expense-value').textContent = `₹${this.formatNumber(avgExpense)}`;
-        document.getElementById('expense-count-value').textContent = expenses.length;
+        // Safely update DOM elements
+        const totalElement = document.getElementById('total-expenses-value');
+        const monthElement = document.getElementById('month-expenses-value');
+        const avgElement = document.getElementById('avg-expense-value');
+        const countElement = document.getElementById('expense-count-value');
+        
+        if (totalElement) totalElement.textContent = `₹${this.formatNumber(totalExpenses)}`;
+        if (monthElement) monthElement.textContent = `₹${this.formatNumber(monthExpenses)}`;
+        if (avgElement) avgElement.textContent = `₹${this.formatNumber(avgExpense)}`;
+        if (countElement) countElement.textContent = expenses.length;
     }
 
     getFilteredExpenses() {
-        let expenses = [...(this.expenseManager.expenses || [])];
+        let expenses = [...(this.expenseManager?.expenses || [])];
         
         if (this.currentFilters.category !== 'all') {
             expenses = expenses.filter(e => e.categoryName === this.currentFilters.category);
@@ -393,34 +1123,146 @@ class ExpenseUI {
         if (expenses.length === 0) {
             tbody.innerHTML = `
                 <tr>
-                    <td colspan="7" style="text-align: center; padding: 40px; color: var(--color-text-secondary);">
-                        No expenses found. Add your first expense to get started!
+                    <td colspan="8" class="table-empty-state">
+                        <div class="empty-state-icon">📊</div>
+                        <div class="empty-state-title">No expenses found</div>
+                        <div class="empty-state-subtitle">Start tracking your expenses by adding your first entry</div>
+                        <button class="empty-state-action" onclick="document.getElementById('add-expense-btn').click()">
+                            ➕ Add First Expense
+                        </button>
                     </td>
                 </tr>
             `;
             return;
         }
         
-        tbody.innerHTML = expenses.map(expense => `
-            <tr>
-                <td>${this.formatDate(expense.date)}</td>
-                <td>${expense.description}</td>
-                <td>
-                    <span class="status-badge" style="background: var(--color-bg-2); padding: 4px 8px; border-radius: 12px; font-size: 12px;">
-                        ${expense.categoryName || 'Uncategorized'}
-                    </span>
+        tbody.innerHTML = expenses.map((expense, index) => `
+            <tr style="animation: fadeInUp 0.3s ease ${index * 0.05}s both;">
+                <td class="checkbox-column">
+                    <input type="checkbox" class="table-checkbox" data-expense-id="${expense.id}">
                 </td>
-                <td><strong>₹${this.formatNumber(expense.amount)}</strong></td>
-                <td>${this.getPaymentMethodLabel(expense.paymentMethod)}</td>
-                <td>${expense.vendorName || '-'}</td>
+                <td class="date-cell">${this.formatDate(expense.date)}</td>
+                <td class="description-cell" title="${expense.description}">
+                    <div style="font-weight: 500; line-height: 1.4;">${expense.description}</div>
+                    ${expense.notes ? `<div style="font-size: 12px; color: var(--text-muted); margin-top: 2px; line-height: 1.3;">${expense.notes}</div>` : ''}
+                </td>
                 <td>
-                    <div class="action-buttons" style="display: flex; gap: 4px;">
-                        <button class="action-btn edit" onclick="window.expenseUI.editExpense('${expense.id}')" style="background: #fef3c7; border: 1px solid #f59e0b; color: #78350f; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 11px;">✏️</button>
-                        <button class="action-btn delete" onclick="window.expenseUI.deleteExpense('${expense.id}')" style="background: #fee2e2; border: 1px solid #ef4444; color: #7f1d1d; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 11px;">🗑️</button>
+                    ${this.getCategoryTag(expense.categoryName)}
+                </td>
+                <td class="amount-cell">
+                    <span style="font-size: 16px; font-weight: 700; color: var(--success);">₹${this.formatNumber(expense.amount)}</span>
+                </td>
+                <td>
+                    ${this.getPaymentMethodTag(expense.paymentMethod)}
+                </td>
+                <td style="color: var(--text-secondary); font-weight: 500;">
+                    ${expense.vendorName || '<span style="color: var(--text-muted); font-style: italic;">No vendor</span>'}
+                </td>
+                <td class="actions-column">
+                    <div class="action-dropdown">
+                        <button class="action-trigger" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'block' ? 'none' : 'block'">
+                            <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M3 9.5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm5 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm5 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3z"/>
+                            </svg>
+                        </button>
+                        <div class="action-menu" style="display: none;">
+                            <button class="action-item action-edit" onclick="window.expenseUI.editExpense('${expense.id}'); this.parentElement.style.display = 'none';">
+                                <svg width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+                                    <path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708L10.5 8.207l-3-3L12.146.146zM11.207 9l-3-3L2.5 11.707V14.5a.5.5 0 0 0 .5.5h2.793L11.207 9z"/>
+                                </svg>
+                                Edit Expense
+                            </button>
+                            <button class="action-item action-duplicate" onclick="window.expenseUI.duplicateExpense('${expense.id}'); this.parentElement.style.display = 'none';">
+                                <svg width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+                                    <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/>
+                                    <path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/>
+                                </svg>
+                                Duplicate
+                            </button>
+                            <button class="action-item action-receipt" onclick="window.expenseUI.viewReceipt('${expense.id}'); this.parentElement.style.display = 'none';">
+                                <svg width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+                                    <path d="M14 1H2a1 1 0 0 0-1 1v11.586l2-2L5 13.586l2-2 2 2L11 11.586l2 2V2a1 1 0 0 0-1-1zM2 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H2z"/>
+                                    <path d="M3 4.5a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5zM3 6a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9A.5.5 0 0 1 3 6zm0 1.5a.5.5 0 0 1 .5-.5h6a.5.5 0 0 1 0 1h-6a.5.5 0 0 1-.5-.5z"/>
+                                </svg>
+                                View Receipt
+                            </button>
+                            <div class="action-divider"></div>
+                            <button class="action-item action-delete" onclick="window.expenseUI.deleteExpense('${expense.id}'); this.parentElement.style.display = 'none';">
+                                <svg width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+                                    <path d="M6.5 1h3a.5.5 0 0 1 .5.5v1H6v-1a.5.5 0 0 1 .5-.5ZM11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3A1.5 1.5 0 0 0 5 1.5v1H2.506a.58.58 0 0 0-.01 0H1.5a.5.5 0 0 0 0 1h.538l.853 10.66A2 2 0 0 0 4.885 16h6.23a2 2 0 0 0 1.994-1.84l.853-10.66h.538a.5.5 0 0 0 0-1h-.995a.59.59 0 0 0-.01 0H11Zm1.958 1-.846 10.58a1 1 0 0 1-.997.92h-6.23a1 1 0 0 1-.997-.92L3.042 3.5h9.916Zm-7.487 1a.5.5 0 0 1 .528.47l.5 8.5a.5.5 0 0 1-.998.06L5 5.03a.5.5 0 0 1 .47-.53Zm5.058 0a.5.5 0 0 1 .47.53l-.5 8.5a.5.5 0 1 1-.998-.06l.5-8.5a.5.5 0 0 1 .528-.47ZM8 4.5a.5.5 0 0 1 .5.5v8.5a.5.5 0 0 1-1 0V5a.5.5 0 0 1 .5-.5Z"/>
+                                </svg>
+                                Delete
+                            </button>
+                        </div>
                     </div>
                 </td>
             </tr>
         `).join('');
+    }
+
+    getCategoryTag(categoryName) {
+        const category = (categoryName || 'Miscellaneous').toLowerCase();
+        
+        // Map category names to CSS classes and icons
+        const categoryMapping = {
+            // Basic categories
+            'rent': { class: 'rent', icon: '🏠' },
+            'utilities': { class: 'utilities', icon: '⚡' },
+            'transportation': { class: 'transportation', icon: '🚗' },
+            'food': { class: 'food', icon: '🍕' },
+            'office': { class: 'office', icon: '🏢' },
+            'marketing': { class: 'marketing', icon: '📢' },
+            'travel': { class: 'travel', icon: '✈️' },
+            'entertainment': { class: 'entertainment', icon: '🎭' },
+            'software': { class: 'software', icon: '💻' },
+            'health': { class: 'health', icon: '🏥' },
+            'education': { class: 'education', icon: '📚' },
+            'miscellaneous': { class: 'miscellaneous', icon: '📦' },
+            
+            // Real data categories from your app
+            'internet & phone': { class: 'utilities', icon: '📞' },
+            'internet and phone': { class: 'utilities', icon: '📞' },
+            'fashion': { class: 'entertainment', icon: '👗' },
+            'professional services': { class: 'office', icon: '💼' },
+            'grocery': { class: 'food', icon: '🛒' },
+            'groceries': { class: 'food', icon: '🛒' },
+            'friends/ family': { class: 'miscellaneous', icon: '👨‍👩‍👧‍👦' },
+            'friends family': { class: 'miscellaneous', icon: '👨‍👩‍👧‍👦' },
+            'credit card loans': { class: 'office', icon: '💳' },
+            'credit card loan': { class: 'office', icon: '💳' }
+        };
+        
+        // Find matching category
+        const categoryData = categoryMapping[category] || { class: 'miscellaneous', icon: '📦' };
+        
+        return `
+            <span class="category-tag ${categoryData.class}">
+                ${categoryData.icon} ${categoryName || 'Miscellaneous'}
+            </span>
+        `;
+    }
+
+    getPaymentMethodTag(paymentMethod) {
+        const methodData = {
+            'cash': { icon: '💵', label: 'Cash', class: 'cash' },
+            'upi': { icon: '📱', label: 'UPI', class: 'upi' },
+            'card': { icon: '💳', label: 'Card', class: 'card' },
+            'credit_card': { icon: '💳', label: 'Credit Card', class: 'card' },
+            'debit_card': { icon: '💳', label: 'Debit Card', class: 'card' },
+            'net_banking': { icon: '🏦', label: 'Net Banking', class: 'banking' },
+            'wallet': { icon: '📲', label: 'Wallet', class: 'wallet' },
+            'digital_wallet': { icon: '📲', label: 'Digital Wallet', class: 'wallet' },
+            'bank_transfer': { icon: '🏦', label: 'Bank Transfer', class: 'banking' }
+        };
+        
+        const method = (paymentMethod || 'cash').toLowerCase();
+        const data = methodData[method] || methodData['cash'];
+        
+        return `
+            <span class="payment-method-tag ${data.class}">
+                ${data.icon} ${data.label}
+            </span>
+        `;
     }
 
     renderCharts(expenses) {
@@ -547,34 +1389,65 @@ class ExpenseUI {
     }
 
     applyFilters() {
-        this.currentFilters = {
-            category: document.getElementById('filter-category').value,
-            dateFrom: document.getElementById('filter-date-from').value,
-            dateTo: document.getElementById('filter-date-to').value,
-            paymentMethod: document.getElementById('filter-payment-method').value,
-            businessOnly: document.getElementById('filter-business-only').checked
-        };
+        const dateFilter = document.getElementById('date-filter');
+        const categoryFilter = document.getElementById('category-filter');
+        const paymentFilter = document.getElementById('payment-filter');
+        const fromDateFilter = document.getElementById('from-date-filter');
+        const toDateFilter = document.getElementById('to-date-filter');
+        const minAmountFilter = document.getElementById('min-amount');
+        const maxAmountFilter = document.getElementById('max-amount');
+
+        this.currentFilters.dateRange = dateFilter ? dateFilter.value : 'all';
+        this.currentFilters.category = categoryFilter ? categoryFilter.value : 'all';
+        this.currentFilters.paymentMethod = paymentFilter ? paymentFilter.value : 'all';
+        this.currentFilters.fromDate = fromDateFilter ? fromDateFilter.value : '';
+        this.currentFilters.toDate = toDateFilter ? toDateFilter.value : '';
+        this.currentFilters.minAmount = minAmountFilter ? parseFloat(minAmountFilter.value) || 0 : 0;
+        this.currentFilters.maxAmount = maxAmountFilter ? parseFloat(maxAmountFilter.value) || Infinity : Infinity;
         
-        this.renderExpenses();
-        this.showToast('Filters applied', 'info');
+        this.renderFilteredExpenses();
     }
 
     clearFilters() {
-        document.getElementById('filter-category').value = 'all';
-        document.getElementById('filter-date-from').value = '';
-        document.getElementById('filter-date-to').value = '';
-        document.getElementById('filter-payment-method').value = 'all';
-        document.getElementById('filter-business-only').checked = false;
-        
+        // Reset all filter values
+        const dateFilter = document.getElementById('date-filter');
+        const categoryFilter = document.getElementById('category-filter');
+        const paymentFilter = document.getElementById('payment-filter');
+        const fromDateFilter = document.getElementById('from-date-filter');
+        const toDateFilter = document.getElementById('to-date-filter');
+        const minAmount = document.getElementById('min-amount');
+        const maxAmount = document.getElementById('max-amount');
+        const searchInput = document.getElementById('expense-search-input');
+
+        if (dateFilter) dateFilter.value = 'all';
+        if (categoryFilter) categoryFilter.value = 'all';
+        if (paymentFilter) paymentFilter.value = 'all';
+        if (fromDateFilter) fromDateFilter.value = '';
+        if (toDateFilter) toDateFilter.value = '';
+        if (minAmount) minAmount.value = '';
+        if (maxAmount) maxAmount.value = '';
+        if (searchInput) searchInput.value = '';
+
+        // Hide date range inputs
+        const dateRangeFilters = document.querySelector('.date-range-filters');
+        if (dateRangeFilters) {
+            dateRangeFilters.style.display = 'none';
+        }
+
+        // Reset filter state
         this.currentFilters = {
+            search: '',
+            dateRange: 'all',
             category: 'all',
-            dateFrom: null,
-            dateTo: null,
             paymentMethod: 'all',
+            fromDate: '',
+            toDate: '',
+            minAmount: 0,
+            maxAmount: Infinity,
             businessOnly: false
         };
-        
-        this.renderExpenses();
+
+        this.renderFilteredExpenses();
         this.showToast('Filters cleared', 'info');
     }
 
@@ -584,13 +1457,135 @@ class ExpenseUI {
         document.getElementById('expense-form').reset();
         document.getElementById('expense-date').value = new Date().toISOString().split('T')[0];
         document.getElementById('expense-business').checked = true;
+        
+        // Populate category dropdown
+        this.populateCategoryDropdown();
+        
         document.getElementById('expense-modal').classList.remove('hidden');
+    }
+
+    async populateCategoryDropdown() {
+        const categorySelect = document.getElementById('expense-category');
+        if (!categorySelect) return;
+
+        try {
+            // Load categories from Supabase
+            const categories = await this.expenseManager.loadCategories();
+            
+            // Clear existing options (except the default one)
+            categorySelect.innerHTML = '<option value="">Select Category</option>';
+            
+            // Add categories to dropdown
+            categories.forEach(category => {
+                const option = document.createElement('option');
+                option.value = category.name;
+                option.textContent = `${category.icon} ${category.name}`;
+                option.style.backgroundColor = category.color + '20'; // Add slight transparency
+                categorySelect.appendChild(option);
+            });
+            
+            console.log(`Loaded ${categories.length} categories into dropdown`);
+        } catch (error) {
+            console.error('Error loading categories:', error);
+            
+            // Fallback to default categories if loading fails
+            const categories = [
+                { value: 'Travel', label: '✈️ Travel' },
+                { value: 'Food', label: '🍕 Food & Dining' },
+                { value: 'Office', label: '🏢 Office Supplies' },
+                { value: 'Marketing', label: '📢 Marketing' },
+                { value: 'Utilities', label: '⚡ Utilities' },
+                { value: 'Transportation', label: '🚗 Transportation' },
+                { value: 'Professional Services', label: '💼 Professional Services' },
+                { value: 'Internet & Phone', label: '📞 Internet & Phone' },
+                { value: 'Fashion', label: '👗 Fashion' },
+                { value: 'Grocery', label: '🛒 Grocery' },
+                { value: 'Entertainment', label: '🎭 Entertainment' },
+                { value: 'Health', label: '🏥 Health' },
+                { value: 'Education', label: '📚 Education' },
+                { value: 'Software', label: '💻 Software' },
+                { value: 'Miscellaneous', label: '📦 Miscellaneous' }
+            ];
+            
+            categorySelect.innerHTML = '<option value="">Select Category</option>';
+            categories.forEach(category => {
+                const option = document.createElement('option');
+                option.value = category.value;
+                option.textContent = category.label;
+                categorySelect.appendChild(option);
+            });
+        }
     }
 
     closeExpenseModal() {
         document.getElementById('expense-modal').classList.add('hidden');
         document.getElementById('expense-form').reset();
         this.expenseManager.editingExpenseId = null;
+    }
+
+    openAddCategoryModal() {
+        document.getElementById('add-category-modal').classList.remove('hidden');
+        // Reset the form
+        document.getElementById('add-category-form').reset();
+        document.getElementById('new-category-icon').value = '';
+        document.getElementById('new-category-color').value = '';
+        
+        // Clear any previous selections
+        document.querySelectorAll('.icon-option.selected').forEach(el => el.classList.remove('selected'));
+        document.querySelectorAll('.color-option.selected').forEach(el => el.classList.remove('selected'));
+    }
+
+    closeAddCategoryModal() {
+        document.getElementById('add-category-modal').classList.add('hidden');
+        document.getElementById('add-category-form').reset();
+    }
+
+    async saveNewCategory() {
+        const name = document.getElementById('new-category-name').value.trim();
+        const icon = document.getElementById('new-category-icon').value;
+        const color = document.getElementById('new-category-color').value;
+
+        if (!name || !icon || !color) {
+            this.showToast('Please fill in all required fields', 'error');
+            return;
+        }
+
+        try {
+            // Check if category already exists
+            const existingCategories = await this.expenseManager.loadCategories();
+            if (existingCategories.some(cat => cat.name.toLowerCase() === name.toLowerCase())) {
+                this.showToast('Category already exists', 'error');
+                return;
+            }
+
+            // Save to Supabase
+            const { data, error } = await window.supabase
+                .from('expense_categories')
+                .insert([{
+                    name: name,
+                    icon: icon,
+                    color: color,
+                    created_at: new Date().toISOString()
+                }]);
+
+            if (error) throw error;
+
+            this.showToast('Category added successfully!', 'success');
+            this.closeAddCategoryModal();
+            
+            // Refresh the category dropdown
+            await this.populateCategoryDropdown();
+            
+            // Select the newly added category
+            const categorySelect = document.getElementById('expense-category');
+            if (categorySelect) {
+                categorySelect.value = name;
+            }
+
+        } catch (error) {
+            console.error('Error saving category:', error);
+            this.showToast('Failed to add category', 'error');
+        }
     }
 
     async editExpense(expenseId) {
@@ -897,6 +1892,12 @@ class ExpenseManager {
 
     async loadExpenses() {
         try {
+            if (!this.supabaseClient) {
+                console.log('No Supabase client, loading sample expenses...');
+                this.expenses = this.getSampleExpenses();
+                return;
+            }
+
             const { data: expenses, error } = await this.supabaseClient
                 .from('expenses')
                 .select('*')
@@ -917,6 +1918,8 @@ class ExpenseManager {
                 taxDeductible: expense.tax_deductible || false,
                 notes: expense.notes || ''
             }));
+            
+            console.log(`Loaded ${this.expenses.length} expenses from Supabase`);
         } catch (error) {
             console.error('Error loading expenses:', error);
             this.expenses = this.getSampleExpenses();
@@ -926,64 +1929,124 @@ class ExpenseManager {
     getSampleExpenses() {
         return [
             {
-                id: 'sample-1',
-                amount: 741.89,
-                description: "McDonald's",
-                categoryName: 'Food',
-                date: '2025-08-09',
-                paymentMethod: 'upi',
-                vendorName: "McDonald's",
-                isBusinessExpense: false,
-                taxDeductible: false,
-                notes: ''
+                id: 'EXP-2025-001',
+                amount: 15750.00,
+                description: 'Office Rent - August 2025',
+                categoryName: 'Rent',
+                date: '2025-08-01',
+                paymentMethod: 'net_banking',
+                vendorName: 'Property Management Co.',
+                isBusinessExpense: true,
+                taxDeductible: true,
+                notes: 'Monthly office rent payment'
             },
             {
-                id: 'sample-2',
-                amount: 1000.00,
-                description: 'Boutique expenses',
-                categoryName: 'Miscellaneous',
-                date: '2025-08-09',
+                id: 'EXP-2025-002',
+                amount: 2845.50,
+                description: 'Electricity Bill - July 2025',
+                categoryName: 'Utilities',
+                date: '2025-08-05',
                 paymentMethod: 'upi',
-                vendorName: 'Fashion Store',
+                vendorName: 'State Electricity Board',
+                isBusinessExpense: true,
+                taxDeductible: true,
+                notes: 'Office electricity consumption'
+            },
+            {
+                id: 'EXP-2025-003',
+                amount: 4200.00,
+                description: 'Team Lunch - Project Completion',
+                categoryName: 'Food',
+                date: '2025-08-10',
+                paymentMethod: 'card',
+                vendorName: 'The Grand Restaurant',
                 isBusinessExpense: true,
                 taxDeductible: false,
-                notes: ''
+                notes: 'Celebration meal for project milestone'
             },
             {
-                id: 'sample-3',
-                amount: 1400.00,
-                description: 'Kids dress',
-                categoryName: 'Fashion',
-                date: '2025-08-09',
+                id: 'EXP-2025-004',
+                amount: 8900.00,
+                description: 'Software License Renewal',
+                categoryName: 'Professional Services',
+                date: '2025-08-12',
+                paymentMethod: 'card',
+                vendorName: 'Adobe Systems',
+                isBusinessExpense: true,
+                taxDeductible: true,
+                notes: 'Annual Creative Cloud subscription'
+            },
+            {
+                id: 'EXP-2025-005',
+                amount: 1250.00,
+                description: 'Office Supplies - Stationery',
+                categoryName: 'Miscellaneous',
+                date: '2025-08-08',
+                paymentMethod: 'cash',
+                vendorName: 'Office Depot',
+                isBusinessExpense: true,
+                taxDeductible: true,
+                notes: 'Pens, papers, folders, etc.'
+            },
+            {
+                id: 'EXP-2025-006',
+                amount: 3600.00,
+                description: 'Business Insurance Premium',
+                categoryName: 'Insurance',
+                date: '2025-08-03',
+                paymentMethod: 'net_banking',
+                vendorName: 'Business Insurance Corp',
+                isBusinessExpense: true,
+                taxDeductible: true,
+                notes: 'Quarterly business insurance payment'
+            },
+            {
+                id: 'EXP-2025-007',
+                amount: 875.00,
+                description: 'Uber Rides - Client Meetings',
+                categoryName: 'Transportation',
+                date: '2025-08-11',
+                paymentMethod: 'wallet',
+                vendorName: 'Uber',
+                isBusinessExpense: true,
+                taxDeductible: true,
+                notes: 'Transportation for client visits'
+            },
+            {
+                id: 'EXP-2025-008',
+                amount: 12500.00,
+                description: 'Marketing Campaign - Social Media',
+                categoryName: 'Professional Services',
+                date: '2025-08-07',
+                paymentMethod: 'card',
+                vendorName: 'Digital Marketing Agency',
+                isBusinessExpense: true,
+                taxDeductible: true,
+                notes: 'Q3 social media advertising budget'
+            },
+            {
+                id: 'EXP-2025-009',
+                amount: 2200.00,
+                description: 'Internet & Phone Bills',
+                categoryName: 'Utilities',
+                date: '2025-08-06',
                 paymentMethod: 'upi',
-                vendorName: 'Kids Store',
-                isBusinessExpense: false,
-                taxDeductible: false,
-                notes: ''
+                vendorName: 'Telecom Provider',
+                isBusinessExpense: true,
+                taxDeductible: true,
+                notes: 'Monthly connectivity charges'
             },
             {
-                id: 'sample-4',
-                amount: 2000.00,
-                description: 'Washing machine service',
+                id: 'EXP-2025-010',
+                amount: 5500.00,
+                description: 'Equipment Maintenance',
                 categoryName: 'Professional Services',
                 date: '2025-08-09',
-                paymentMethod: 'upi',
-                vendorName: 'Service Center',
-                isBusinessExpense: false,
-                taxDeductible: false,
-                notes: ''
-            },
-            {
-                id: 'sample-5',
-                amount: 100.00,
-                description: 'Bananas',
-                categoryName: 'Grocery',
-                date: '2025-08-08',
-                paymentMethod: 'upi',
-                vendorName: 'Fresh Mart',
-                isBusinessExpense: false,
-                taxDeductible: false,
-                notes: ''
+                paymentMethod: 'net_banking',
+                vendorName: 'Tech Support Solutions',
+                isBusinessExpense: true,
+                taxDeductible: true,
+                notes: 'Quarterly computer and server maintenance'
             }
         ];
     }
@@ -1531,12 +2594,48 @@ async function initializeApp() {
         try {
             console.log('Initializing Expense Management...');
             
-            // Initialize ExpenseManager
+            // Initialize ExpenseManager with proper Supabase client
             window.expenseManager = new ExpenseManager(supabaseClient);
             await window.expenseManager.initialize();
             
             // Initialize ExpenseUI
             window.expenseUI = new ExpenseUI(window.expenseManager, showToast);
+            
+            // Add global functions for modal interactions
+            window.closeExpenseModal = function() {
+                if (window.expenseUI) {
+                    window.expenseUI.closeExpenseModal();
+                }
+            };
+            
+            window.saveExpense = async function() {
+                if (window.expenseUI) {
+                    await window.expenseUI.saveExpense();
+                }
+            };
+            
+            // Icon and color selection for add category modal
+            window.selectIcon = function(icon) {
+                // Remove previous selection
+                document.querySelectorAll('.icon-option.selected').forEach(el => el.classList.remove('selected'));
+                
+                // Add selection to clicked element
+                event.target.classList.add('selected');
+                
+                // Set the hidden input value
+                document.getElementById('new-category-icon').value = icon;
+            };
+            
+            window.selectColor = function(color) {
+                // Remove previous selection
+                document.querySelectorAll('.color-option.selected').forEach(el => el.classList.remove('selected'));
+                
+                // Add selection to clicked element
+                event.target.classList.add('selected');
+                
+                // Set the hidden input value
+                document.getElementById('new-category-color').value = color;
+            };
             
             console.log('Expense Management initialized successfully');
         } catch (error) {
@@ -2910,22 +4009,50 @@ function setupNavigation() {
                                         window.expenseUI.initializeUI();
                                     } catch (error) {
                                         console.error('Error initializing Expense UI:', error);
-                                        showToast('Error loading expenses page', 'error');
+                                        // Don't show error toast, try to reinitialize instead
+                                        window.expenseUI = null;
+                                        window.expenseManager = null;
                                     }
-                                } else if (window.expenseManager) {
-                                    console.log('Creating ExpenseUI instance');
-                                    window.expenseUI = new ExpenseUI(window.expenseManager, showToast);
-                                    window.expenseUI.initializeUI();
-                                } else {
-                                    console.warn('Expense module not initialized');
-                                    initializeExpenseModule().then(() => {
-                                        if (window.expenseUI) {
+                                } 
+                                
+                                if (!window.expenseUI) {
+                                    if (window.expenseManager) {
+                                        console.log('Creating ExpenseUI instance');
+                                        try {
+                                            window.expenseUI = new ExpenseUI(window.expenseManager, showToast);
+                                            window.expenseUI.initializeUI();
+                                        } catch (error) {
+                                            console.error('Error creating ExpenseUI:', error);
+                                            // Initialize with null manager for basic functionality
+                                            window.expenseUI = new ExpenseUI(null, showToast);
                                             window.expenseUI.initializeUI();
                                         }
-                                    }).catch(error => {
-                                        console.error('Failed to initialize expense module:', error);
-                                        showToast('Expense module not available', 'error');
-                                    });
+                                    } else {
+                                        console.warn('Expense module not initialized, initializing now...');
+                                        initializeExpenseModule().then(() => {
+                                            if (window.expenseUI) {
+                                                window.expenseUI.initializeUI();
+                                            }
+                                        }).catch(error => {
+                                            console.error('Failed to initialize expense module:', error);
+                                            // Initialize with basic functionality
+                                            try {
+                                                if (!window.expenseManager) {
+                                                    window.expenseManager = new ExpenseManager(null);
+                                                    window.expenseManager.initialize().then(() => {
+                                                        window.expenseUI = new ExpenseUI(window.expenseManager, showToast);
+                                                        window.expenseUI.initializeUI();
+                                                    });
+                                                } else {
+                                                    window.expenseUI = new ExpenseUI(window.expenseManager, showToast);
+                                                    window.expenseUI.initializeUI();
+                                                }
+                                            } catch (fallbackError) {
+                                                console.error('Fallback initialization failed:', fallbackError);
+                                                showToast('Expense module temporarily unavailable', 'warning');
+                                            }
+                                        });
+                                    }
                                 }
                                 break;
                                 
@@ -2968,8 +4095,11 @@ function setupNavigation() {
 
 // Helper function to initialize expense module on demand
 async function initializeExpenseModule() {
+    // Handle null supabaseClient gracefully for local development
     if (!window.supabaseClient) {
-        throw new Error('Supabase client not initialized');
+        console.warn('Supabase client not available, initializing in offline mode');
+        // Create a mock supabaseClient for local development
+        window.supabaseClient = null;
     }
     
     if (!window.expenseManager) {
