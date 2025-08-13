@@ -62,14 +62,6 @@ class ExpenseUI {
                         <label class="form-label" style="font-size: 12px;">Category</label>
                         <select class="form-control" id="filter-category">
                             <option value="all">All Categories</option>
-                            <option value="Food">🍕 Food</option>
-                            <option value="Fashion">👔 Fashion</option>
-                            <option value="Professional Services">💼 Professional Services</option>
-                            <option value="Grocery">🛒 Grocery</option>
-                            <option value="Miscellaneous">📦 Miscellaneous</option>
-                            <option value="Transportation">🚗 Transportation</option>
-                            <option value="Entertainment">🎮 Entertainment</option>
-                            <option value="Healthcare">🏥 Healthcare</option>
                         </select>
                     </div>
                     <div class="form-group" style="margin: 0;">
@@ -169,24 +161,15 @@ class ExpenseUI {
                             </div>
                             
                             <div class="form-row">
-                                <div class="form-group">
-                                    <label class="form-label" for="expense-category">Category</label>
-                                    <select class="form-control" id="expense-category" required>
-                                        <option value="">Select Category</option>
-                                        <option value="Food">🍕 Food</option>
-                                        <option value="Fashion">👔 Fashion</option>
-                                        <option value="Professional Services">💼 Professional Services</option>
-                                        <option value="Grocery">🛒 Grocery</option>
-                                        <option value="Miscellaneous">📦 Miscellaneous</option>
-                                        <option value="Transportation">🚗 Transportation</option>
-                                        <option value="Entertainment">🎮 Entertainment</option>
-                                        <option value="Healthcare">🏥 Healthcare</option>
-                                        <option value="Education">📚 Education</option>
-                                        <option value="Utilities">💡 Utilities</option>
-                                        <option value="Rent">🏠 Rent</option>
-                                        <option value="Insurance">🛡️ Insurance</option>
-                                    </select>
-                                </div>
+                                    <div class="form-group">
+                                        <label class="form-label" for="expense-category">Category</label>
+                                        <div style="display: flex; gap: 8px; align-items: end;">
+                                            <select class="form-control" id="expense-category" required style="flex: 1;">
+                                                <option value="">Select Category</option>
+                                            </select>
+                                            <button type="button" class="btn btn--secondary btn--sm" id="add-category-btn" style="padding: 8px 12px; white-space: nowrap;">+ Add</button>
+                                        </div>
+                                    </div>
                                 <div class="form-group">
                                     <label class="form-label" for="expense-payment-method">Payment Method</label>
                                     <select class="form-control" id="expense-payment-method" required>
@@ -275,6 +258,64 @@ class ExpenseUI {
         const expenseForm = document.getElementById('expense-form');
         if (expenseForm) {
             expenseForm.addEventListener('submit', (e) => e.preventDefault());
+        }
+
+        // Add Category button
+        const addCategoryBtn = document.getElementById('add-category-btn');
+        if (addCategoryBtn) {
+            addCategoryBtn.addEventListener('click', () => this.showAddCategoryModal());
+        }
+
+        // Populate category dropdowns
+        this.populateCategoryDropdowns();
+    }
+
+    async populateCategoryDropdowns() {
+        // Load categories from ExpenseManager
+        await this.expenseManager.loadCategories();
+        const categories = this.expenseManager.categories;
+
+        // Populate filter dropdown
+        const filterSelect = document.getElementById('filter-category');
+        if (filterSelect) {
+            // Keep "All Categories" option and add dynamic categories
+            const existingOptions = filterSelect.innerHTML;
+            const categoryOptions = categories.map(cat => 
+                `<option value="${cat.name}">${cat.icon} ${cat.name}</option>`
+            ).join('');
+            filterSelect.innerHTML = existingOptions.split('</option>')[0] + '</option>' + categoryOptions;
+        }
+
+        // Populate expense modal dropdown
+        const expenseSelect = document.getElementById('expense-category');
+        if (expenseSelect) {
+            const categoryOptions = categories.map(cat => 
+                `<option value="${cat.name}">${cat.icon} ${cat.name}</option>`
+            ).join('');
+            expenseSelect.innerHTML = '<option value="">Select Category</option>' + categoryOptions;
+        }
+    }
+
+    showAddCategoryModal() {
+        const categoryName = prompt('Enter new category name:');
+        if (categoryName && categoryName.trim()) {
+            const categoryIcon = prompt('Enter category icon (emoji):') || '📦';
+            const categoryColor = prompt('Enter category color (hex code):') || '#6B7280';
+            
+            this.expenseManager.addCategory({
+                name: categoryName.trim(),
+                icon: categoryIcon,
+                color: categoryColor
+            });
+            
+            // Refresh dropdowns
+            this.populateCategoryDropdowns();
+            
+            // Select the new category in the expense modal
+            const expenseSelect = document.getElementById('expense-category');
+            if (expenseSelect) {
+                expenseSelect.value = categoryName.trim();
+            }
         }
     }
 
@@ -708,19 +749,135 @@ class ExpenseManager {
         };
         this.isInitialized = false;
         this.editingExpenseId = null;
+        this.defaultCategories = [
+            { id: 'food', name: 'Food', icon: '🍕', color: '#FF6B6B' },
+            { id: 'fashion', name: 'Fashion', icon: '👔', color: '#4ECDC4' },
+            { id: 'professional', name: 'Professional Services', icon: '💼', color: '#45B7D1' },
+            { id: 'grocery', name: 'Grocery', icon: '🛒', color: '#96CEB4' },
+            { id: 'miscellaneous', name: 'Miscellaneous', icon: '📦', color: '#FFEAA7' },
+            { id: 'transportation', name: 'Transportation', icon: '🚗', color: '#DDA0DD' },
+            { id: 'entertainment', name: 'Entertainment', icon: '🎮', color: '#FF7675' },
+            { id: 'healthcare', name: 'Healthcare', icon: '🏥', color: '#74B9FF' },
+            { id: 'education', name: 'Education', icon: '📚', color: '#A29BFE' },
+            { id: 'utilities', name: 'Utilities', icon: '⚡', color: '#FDCB6E' },
+            { id: 'rent', name: 'Rent', icon: '🏠', color: '#6C5CE7' },
+            { id: 'insurance', name: 'Insurance', icon: '🛡️', color: '#00B894' }
+        ];
     }
 
     async initialize() {
         try {
+            await this.loadCategories();
             await this.loadExpenses();
             this.isInitialized = true;
             return true;
         } catch (error) {
             console.error('Error initializing ExpenseManager:', error);
-            // Load sample data as fallback
+            // Load default categories and sample data as fallback
+            this.categories = [...this.defaultCategories];
             this.expenses = this.getSampleExpenses();
             this.isInitialized = true;
             return true;
+        }
+    }
+
+    async loadCategories() {
+        try {
+            if (!this.supabaseClient) {
+                this.categories = [...this.defaultCategories];
+                return;
+            }
+
+            const { data: categories, error } = await this.supabaseClient
+                .from('expense_categories')
+                .select('*')
+                .order('name');
+
+            if (error) {
+                console.warn('Error loading categories from Supabase:', error);
+                this.categories = [...this.defaultCategories];
+                return;
+            }
+
+            if (categories && categories.length > 0) {
+                this.categories = categories.map(cat => ({
+                    id: cat.id,
+                    name: cat.name,
+                    icon: cat.icon || '📦',
+                    color: cat.color || '#FFEAA7'
+                }));
+            } else {
+                // If no categories in DB, use defaults and optionally save them
+                this.categories = [...this.defaultCategories];
+                await this.saveDefaultCategoriesToSupabase();
+            }
+        } catch (error) {
+            console.error('Error loading categories:', error);
+            this.categories = [...this.defaultCategories];
+        }
+    }
+
+    async saveDefaultCategoriesToSupabase() {
+        if (!this.supabaseClient) return;
+        
+        try {
+            const { error } = await this.supabaseClient
+                .from('expense_categories')
+                .insert(this.defaultCategories.map(cat => ({
+                    id: cat.id,
+                    name: cat.name,
+                    icon: cat.icon,
+                    color: cat.color
+                })));
+
+            if (error) {
+                console.warn('Could not save default categories to Supabase:', error);
+            }
+        } catch (error) {
+            console.error('Error saving default categories:', error);
+        }
+    }
+
+    async addCategory(categoryData) {
+        try {
+            const newCategory = {
+                id: categoryData.id || `custom_${Date.now()}`,
+                name: categoryData.name,
+                icon: categoryData.icon || '📦',
+                color: categoryData.color || '#FFEAA7'
+            };
+
+            if (this.supabaseClient) {
+                const { data, error } = await this.supabaseClient
+                    .from('expense_categories')
+                    .insert([newCategory])
+                    .select();
+
+                if (error) {
+                    console.error('Error saving category to Supabase:', error);
+                    // Add locally even if Supabase fails
+                    this.categories.push(newCategory);
+                    return newCategory;
+                }
+
+                if (data && data[0]) {
+                    const savedCategory = {
+                        id: data[0].id,
+                        name: data[0].name,
+                        icon: data[0].icon,
+                        color: data[0].color
+                    };
+                    this.categories.push(savedCategory);
+                    return savedCategory;
+                }
+            } else {
+                // No Supabase, just add locally
+                this.categories.push(newCategory);
+                return newCategory;
+            }
+        } catch (error) {
+            console.error('Error adding category:', error);
+            throw error;
         }
     }
 
