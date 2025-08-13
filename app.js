@@ -1450,6 +1450,17 @@ async function initializeApp() {
         showLoadingState(true);
         addLogoutButton();
         
+        // Initialize appData if it doesn't exist
+        if (!window.appData) {
+            window.appData = {
+                invoices: [],
+                clients: [],
+                expenses: [],
+                settings: {},
+                dataLoaded: false
+            };
+        }
+        
         // Try to load from Supabase, but have fallback
         try {
             await loadDataFromSupabase();
@@ -4623,21 +4634,50 @@ async function deleteClient(clientId, clientName) {
 }
 
 function renderAnalytics(period = 'monthly') {
-    console.log('Rendering Analytics...');
+    console.log('🔬 Rendering Analytics page...');
     
-    const analyticsPage = document.getElementById('analytics-page');
-    if (!analyticsPage) return;
-    
-    // Clean up existing content and charts
-    cleanupAnalyticsPage();
-    
-    analyticsPage.innerHTML = getAnalyticsPageHTML();
-    
-    // Initialize analytics
-    setTimeout(() => {
-        initializeAnalyticsEventListeners();
-        renderAnalyticsData();
-    }, 100);
+    try {
+        const analyticsPage = document.getElementById('analytics-page');
+        if (!analyticsPage) {
+            console.error('Analytics page element not found');
+            return;
+        }
+
+        // Ensure we have data
+        if (!window.appData || !appData.dataLoaded) {
+            console.warn('App data not loaded, using emergency init');
+            addSampleDataIfEmpty();
+        }
+
+        // Clean up existing content and charts
+        cleanupAnalyticsPage();
+        
+        analyticsPage.innerHTML = getAnalyticsPageHTML();
+        
+        // Initialize analytics
+        setTimeout(() => {
+            initializeAnalyticsEventListeners();
+            renderAnalyticsData();
+        }, 100);
+        
+        console.log('✅ Analytics page rendered successfully');
+    } catch (error) {
+        console.error('❌ Error rendering analytics:', error);
+        // Fallback simple analytics page
+        const analyticsPage = document.getElementById('analytics-page');
+        if (analyticsPage) {
+            analyticsPage.innerHTML = `
+                <div class="page-header">
+                    <h1>📈 Analytics</h1>
+                    <p>Loading analytics data...</p>
+                </div>
+                <div style="padding: 40px; text-align: center;">
+                    <p>Analytics is being initialized. Please wait...</p>
+                    <button onclick="location.reload()">Refresh Page</button>
+                </div>
+            `;
+        }
+    }
 }
 
 function getAnalyticsPageHTML() {
