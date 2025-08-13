@@ -3523,14 +3523,14 @@ select.form-control {
 
 /* ===== EXPENSE PAGE MODERN STYLES ===== */
 
-.charts-section {
+#expenses-page .charts-section {
     display: grid;
     grid-template-columns: 2fr 1fr;
     gap: 24px;
     margin-bottom: 32px;
 }
 
-.chart-card {
+#expenses-page .chart-card {
     background: var(--color-surface);
     border: 1px solid var(--color-border);
     border-radius: 16px;
@@ -3538,28 +3538,28 @@ select.form-control {
     transition: all 0.3s ease;
 }
 
-.chart-card:hover {
+#expenses-page .chart-card:hover {
     transform: translateY(-2px);
     box-shadow: 0 12px 40px rgba(0, 0, 0, 0.1);
 }
 
-.chart-header {
+#expenses-page .chart-header {
     margin-bottom: 20px;
 }
 
-.chart-title {
+#expenses-page .chart-title {
     margin: 0;
     font-size: 1.125rem;
     font-weight: 600;
     color: var(--color-text-primary);
 }
 
-.chart-content {
+#expenses-page .chart-content {
     position: relative;
     height: 300px;
 }
 
-.modern-table {
+#expenses-page .modern-table {
     width: 100%;
     border-collapse: collapse;
     background: var(--color-surface);
@@ -3568,11 +3568,11 @@ select.form-control {
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
 }
 
-.modern-table thead {
+#expenses-page .modern-table thead {
     background: linear-gradient(135deg, #f8fafc, #f1f5f9);
 }
 
-.modern-table th {
+#expenses-page .modern-table th {
     padding: 16px 20px;
     text-align: left;
     font-weight: 600;
@@ -3583,34 +3583,34 @@ select.form-control {
     border-bottom: 2px solid var(--color-border);
 }
 
-.modern-table td {
+#expenses-page .modern-table td {
     padding: 16px 20px;
     border-bottom: 1px solid #f1f5f9;
     color: var(--color-text-primary);
     font-size: 0.875rem;
 }
 
-.modern-table tbody tr {
+#expenses-page .modern-table tbody tr {
     transition: all 0.2s ease;
 }
 
-.modern-table tbody tr:hover {
+#expenses-page .modern-table tbody tr:hover {
     background: linear-gradient(135deg, #f8fafc, #f1f5f9);
 }
 
-.modern-table tbody tr:last-child td {
+#expenses-page .modern-table tbody tr:last-child td {
     border-bottom: none;
 }
 
 /* Enhanced Metrics Cards for Expenses */
-.metrics-grid {
+#expenses-page .metrics-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
     gap: 24px;
     margin-bottom: 32px;
 }
 
-.metric-card {
+#expenses-page .metric-card {
     background: linear-gradient(135deg, #ffffff, #f8fafc);
     border: 1px solid var(--color-border);
     border-radius: 16px;
@@ -3623,7 +3623,7 @@ select.form-control {
     overflow: hidden;
 }
 
-.metric-card::before {
+#expenses-page .metric-card::before {
     content: '';
     position: absolute;
     top: 0;
@@ -3635,16 +3635,16 @@ select.form-control {
     transition: transform 0.3s ease;
 }
 
-.metric-card:hover::before {
+#expenses-page .metric-card:hover::before {
     transform: scaleX(1);
 }
 
-.metric-card:hover {
+#expenses-page .metric-card:hover {
     transform: translateY(-4px);
     box-shadow: 0 12px 40px rgba(0, 0, 0, 0.1);
 }
 
-.metric-icon {
+#expenses-page .metric-icon {
     width: 48px;
     height: 48px;
     background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
@@ -3656,11 +3656,11 @@ select.form-control {
     flex-shrink: 0;
 }
 
-.metric-content {
+#expenses-page .metric-content {
     flex: 1;
 }
 
-.metric-value {
+#expenses-page .metric-value {
     font-size: 1.75rem;
     font-weight: 700;
     color: var(--color-text-primary);
@@ -3671,18 +3671,18 @@ select.form-control {
     -webkit-text-fill-color: transparent;
 }
 
-.metric-label {
+#expenses-page .metric-label {
     font-size: 0.875rem;
     color: var(--color-text-secondary);
     font-weight: 500;
 }
 
 /* Search and Filters Styles for Expenses */
-.search-section {
+#expenses-page .search-section {
     margin-bottom: 32px;
 }
 
-.search-container {
+#expenses-page .search-container {
     background: var(--color-surface);
     border: 1px solid var(--color-border);
     border-radius: 16px;
@@ -3690,55 +3690,55 @@ select.form-control {
     transition: all 0.3s ease;
 }
 
-.search-container:hover {
+#expenses-page .search-container:hover {
     box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
 }
 
-.search-header {
+#expenses-page .search-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     margin-bottom: 20px;
 }
 
-.search-title {
+#expenses-page .search-title {
     margin: 0;
     font-size: 1.125rem;
     font-weight: 600;
     color: var(--color-text-primary);
 }
 
-.search-actions {
+#expenses-page .search-actions {
     display: flex;
     gap: 12px;
 }
 
-.search-filters {
+#expenses-page .search-filters {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
     gap: 20px;
     align-items: end;
 }
 
-.filter-group {
+#expenses-page .filter-group {
     display: flex;
     flex-direction: column;
     gap: 8px;
 }
 
-.filter-group.filter-checkbox {
+#expenses-page .filter-group.filter-checkbox {
     justify-content: flex-end;
     padding-top: 8px;
 }
 
-.filter-label {
+#expenses-page .filter-label {
     font-size: 0.875rem;
     font-weight: 500;
     color: var(--color-text-secondary);
 }
 
-.filter-select,
-.filter-input {
+#expenses-page .filter-select,
+#expenses-page .filter-input {
     padding: 10px 14px;
     border: 1.5px solid var(--color-border);
     border-radius: 8px;
@@ -3748,19 +3748,19 @@ select.form-control {
     transition: all 0.2s ease;
 }
 
-.filter-select:focus,
-.filter-input:focus {
+#expenses-page .filter-select:focus,
+#expenses-page .filter-input:focus {
     outline: none;
     border-color: #4f46e5;
     box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
 }
 
-.filter-select:hover,
-.filter-input:hover {
+#expenses-page .filter-select:hover,
+#expenses-page .filter-input:hover {
     border-color: #d1d5db;
 }
 
-.checkbox-container {
+#expenses-page .checkbox-container {
     display: flex;
     align-items: center;
     gap: 8px;
@@ -3769,82 +3769,82 @@ select.form-control {
     color: var(--color-text-primary);
 }
 
-.checkbox-container input[type="checkbox"] {
+#expenses-page .checkbox-container input[type="checkbox"] {
     width: 18px;
     height: 18px;
     accent-color: #4f46e5;
     cursor: pointer;
 }
 
-.checkmark {
+#expenses-page .checkmark {
     position: relative;
 }
 
 /* Responsive Design for Expense Page */
 @media (max-width: 1024px) {
-    .charts-section {
+    #expenses-page .charts-section {
         grid-template-columns: 1fr;
     }
     
-    .search-filters {
+    #expenses-page .search-filters {
         grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
         gap: 16px;
     }
 }
 
 @media (max-width: 768px) {
-    .metrics-grid {
+    #expenses-page .metrics-grid {
         grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
         gap: 16px;
     }
     
-    .metric-card {
+    #expenses-page .metric-card {
         padding: 20px;
         gap: 12px;
     }
     
-    .metric-icon {
+    #expenses-page .metric-icon {
         width: 40px;
         height: 40px;
         font-size: 1.25rem;
     }
     
-    .metric-value {
+    #expenses-page .metric-value {
         font-size: 1.5rem;
     }
     
-    .search-filters {
+    #expenses-page .search-filters {
         grid-template-columns: 1fr;
         gap: 16px;
     }
     
-    .search-header {
+    #expenses-page .search-header {
         flex-direction: column;
         align-items: flex-start;
         gap: 12px;
     }
     
-    .search-actions {
+    #expenses-page .search-actions {
         width: 100%;
         justify-content: flex-end;
     }
 }
 
 @media (max-width: 480px) {
-    .metrics-grid {
+    #expenses-page .metrics-grid {
         grid-template-columns: 1fr;
     }
     
-    .metric-card {
+    #expenses-page .metric-card {
         padding: 16px;
     }
     
-    .modern-table {
+    #expenses-page .modern-table {
         font-size: 0.75rem;
     }
     
-    .modern-table th,
-    .modern-table td {
+    #expenses-page .modern-table th,
+    #expenses-page .modern-table td {
         padding: 12px 8px;
     }
 }
