@@ -1303,6 +1303,27 @@ let appData = {
 // Make appData globally accessible
 window.appData = appData;
 
+// Make critical functions globally available for emergency fallback
+window.addSampleDataIfEmpty = function() {
+    console.log('Adding sample data...');
+    if (appData.clients.length === 0) {
+        appData.clients = [
+            { id: 'client-1', name: 'Sample Client', email: 'client@example.com', totalEarnings: 15000 },
+            { id: 'client-2', name: 'Another Client', email: 'another@example.com', totalEarnings: 8500 }
+        ];
+    }
+    if (appData.invoices.length === 0) {
+        appData.invoices = [
+            { id: 'HP-2526-001', client: 'Sample Client', amount: 5000, date: '2025-08-01', status: 'Paid', clientId: 'client-1' },
+            { id: 'HP-2526-002', client: 'Another Client', amount: 7500, date: '2025-08-05', status: 'Pending', clientId: 'client-2' }
+        ];
+    }
+    appData.totalEarnings = appData.invoices.reduce((sum, inv) => sum + inv.amount, 0);
+    appData.totalClients = appData.clients.length;
+    appData.totalInvoices = appData.invoices.length;
+    appData.dataLoaded = true;
+};
+
 // Analytics state for filters
 let analyticsState = {
     currentPeriod: 'monthly',
@@ -8942,7 +8963,8 @@ function addSampleDataIfEmpty() {
 }
 
 // Emergency initialization if main init fails
-function emergencyInit() {
+// Make critical functions globally available immediately
+window.emergencyInit = function() {
     console.log('🚨 Running emergency initialization...');
     
     try {
@@ -8966,13 +8988,46 @@ function emergencyInit() {
             };
         }
         
-        addSampleDataIfEmpty();
+        if (typeof addSampleDataIfEmpty === 'function') {
+            addSampleDataIfEmpty();
+        } else {
+            // Basic sample data if function not available
+            window.appData.clients = [
+                { id: 'client-1', name: 'Sample Client', email: 'client@example.com', totalEarnings: 15000 },
+                { id: 'client-2', name: 'Another Client', email: 'another@example.com', totalEarnings: 8500 }
+            ];
+            window.appData.invoices = [
+                { id: 'HP-2526-001', client: 'Sample Client', amount: 5000, date: '2025-08-01', status: 'Paid', clientId: 'client-1' },
+                { id: 'HP-2526-002', client: 'Another Client', amount: 7500, date: '2025-08-05', status: 'Pending', clientId: 'client-2' }
+            ];
+            window.appData.totalEarnings = 12500;
+            window.appData.totalClients = 2;
+            window.appData.totalInvoices = 2;
+        }
+        
         appData.dataLoaded = true;
         
-        setupNavigation();
-        renderDashboard();
+        if (typeof setupNavigation === 'function') setupNavigation();
+        if (typeof renderDashboard === 'function') renderDashboard();
         
-        showToast('App loaded with sample data. Database connection may be limited.', 'warning');
+        console.log('✅ Emergency init completed successfully');
+        if (typeof showToast === 'function') {
+            showToast('App loaded with sample data. Database connection may be limited.', 'warning');
+        }
+        
+    } catch (error) {
+        console.error('❌ Emergency init failed:', error);
+        // Last resort - create minimal working state
+        window.appData = {
+            totalEarnings: 0,
+            totalClients: 0, 
+            totalInvoices: 0,
+            clients: [],
+            invoices: [],
+            dataLoaded: true
+        };
+    }
+};
         console.log('✅ Emergency init completed successfully');
     } catch (error) {
         console.error('Emergency init failed:', error);
