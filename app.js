@@ -2168,7 +2168,7 @@ function applyAnalyticsFilters() {
 
     analyticsState.filteredData = filteredInvoices;
 
-    renderAnalyticsChart(period, filteredInvoices);
+    renderAnalyticsChart(period);
     renderTopClientInsights(filteredInvoices);
 
     showToast(`Analytics updated: ${period} view${fromDate && toDate ? ' with date filter' : ''}`, 'success');
@@ -2186,7 +2186,7 @@ function clearAnalyticsFilters() {
     const statusDiv = document.getElementById('analytics-status');
     statusDiv.className = 'filter-status';
 
-    renderAnalyticsChart('monthly', appData.invoices);
+    renderAnalyticsChart('monthly');
     renderTopClientInsights(appData.invoices);
     
     showToast('Analytics filters cleared', 'info');
@@ -4846,10 +4846,7 @@ function getAnalyticsPageHTML() {
         </div>
     `;
 }
-                    border-bottom: 1px solid #f1f5f9;
-                }
 
-                .insight-item:last-child {
 function initializeAnalyticsEventListeners() {
     // Period tabs
     const periodTabs = document.querySelectorAll('.period-tab');
