@@ -4654,11 +4654,32 @@ function renderAnalytics(period = 'monthly') {
         
         analyticsPage.innerHTML = getAnalyticsPageHTML();
         
-        // Initialize analytics
+        // Initialize analytics with longer timeout
         setTimeout(() => {
-            initializeAnalyticsEventListeners();
-            renderAnalyticsData();
-        }, 100);
+            try {
+                console.log('🔬 Initializing analytics event listeners...');
+                initializeAnalyticsEventListeners();
+                console.log('🔬 Starting to render analytics data...');
+                renderAnalyticsData();
+                console.log('✅ Analytics initialization complete');
+            } catch (error) {
+                console.error('❌ Error during analytics initialization:', error);
+                // Show error in analytics page
+                const analyticsPage = document.getElementById('analytics-page');
+                if (analyticsPage) {
+                    analyticsPage.innerHTML = `
+                        <div class="page-header">
+                            <h1>📈 Analytics</h1>
+                            <p style="color: #ef4444;">Error loading analytics: ${error.message}</p>
+                        </div>
+                        <div style="padding: 40px; text-align: center;">
+                            <p>There was an error loading the analytics page.</p>
+                            <button onclick="location.reload()" class="btn btn--primary">Refresh Page</button>
+                        </div>
+                    `;
+                }
+            }
+        }, 300);
         
         console.log('✅ Analytics page rendered successfully');
     } catch (error) {
@@ -4944,22 +4965,63 @@ function initializeAnalyticsEventListeners() {
 }
 
 function renderAnalyticsData() {
-    const invoices = appData?.invoices || [];
-    const clients = appData?.clients || [];
-    
-    // Update metrics
-    updateAnalyticsMetrics(invoices, clients);
-    
-    // Render charts
-    renderAnalyticsChart('monthly');
-    renderClientDistributionChart(invoices, clients);
-    renderStatusBreakdownChart(invoices);
-    
-    // Generate insights
-    generateAnalyticsInsights(invoices, clients);
-    
-    // Populate top clients table
-    populateTopClientsTable(invoices, clients);
+    try {
+        console.log('🔬 Starting renderAnalyticsData...');
+        const invoices = appData?.invoices || [];
+        const clients = appData?.clients || [];
+        
+        console.log('📊 Data available:', { invoices: invoices.length, clients: clients.length });
+        
+        // Update metrics
+        try {
+            updateAnalyticsMetrics(invoices, clients);
+            console.log('✅ Metrics updated');
+        } catch (error) {
+            console.error('❌ Error updating metrics:', error);
+        }
+        
+        // Render charts
+        try {
+            renderAnalyticsChart('monthly');
+            console.log('✅ Main chart rendered');
+        } catch (error) {
+            console.error('❌ Error rendering main chart:', error);
+        }
+        
+        try {
+            renderClientDistributionChart(invoices, clients);
+            console.log('✅ Client distribution chart rendered');
+        } catch (error) {
+            console.error('❌ Error rendering client chart:', error);
+        }
+        
+        try {
+            renderStatusBreakdownChart(invoices);
+            console.log('✅ Status breakdown chart rendered');
+        } catch (error) {
+            console.error('❌ Error rendering status chart:', error);
+        }
+        
+        // Generate insights
+        try {
+            generateAnalyticsInsights(invoices, clients);
+            console.log('✅ Insights generated');
+        } catch (error) {
+            console.error('❌ Error generating insights:', error);
+        }
+        
+        // Populate top clients table
+        try {
+            populateTopClientsTable(invoices, clients);
+            console.log('✅ Top clients table populated');
+        } catch (error) {
+            console.error('❌ Error populating clients table:', error);
+        }
+        
+        console.log('✅ renderAnalyticsData completed successfully');
+    } catch (error) {
+        console.error('❌ Critical error in renderAnalyticsData:', error);
+    }
 }
 
 function updateAnalyticsMetrics(invoices, clients) {
@@ -4977,27 +5039,39 @@ function updateAnalyticsMetrics(invoices, clients) {
 }
 
 function renderAnalyticsChart(period = 'monthly') {
-    const canvas = document.getElementById('analyticsChart');
-    if (!canvas) return;
+    try {
+        console.log('🔬 Starting renderAnalyticsChart...');
+        
+        // Check if Chart.js is loaded
+        if (typeof Chart === 'undefined') {
+            console.error('❌ Chart.js is not loaded');
+            return;
+        }
+        
+        const canvas = document.getElementById('analyticsChart');
+        if (!canvas) {
+            console.error('❌ Analytics chart canvas not found');
+            return;
+        }
     
-    // Destroy existing chart
-    if (window.analyticsChart) {
-        window.analyticsChart.destroy();
-    }
-    
-    const invoices = getFilteredAnalyticsData();
-    let chartData;
-    
-    switch (period) {
-        case 'quarterly':
-            chartData = calculateQuarterlyEarnings(invoices);
-            break;
-        case 'yearly':
-            chartData = calculateYearlyEarnings(invoices);
-            break;
-        default:
-            chartData = calculateMonthlyEarningsForData(invoices);
-    }
+        // Destroy existing chart
+        if (window.analyticsChart && typeof window.analyticsChart.destroy === 'function') {
+            window.analyticsChart.destroy();
+        }
+        
+        const invoices = getFilteredAnalyticsData();
+        let chartData;
+        
+        switch (period) {
+            case 'quarterly':
+                chartData = calculateQuarterlyEarnings(invoices);
+                break;
+            case 'yearly':
+                chartData = calculateYearlyEarnings(invoices);
+                break;
+            default:
+                chartData = calculateMonthlyEarningsForData(invoices);
+        }
     
     window.analyticsChart = new Chart(canvas, {
         type: 'bar',
@@ -5323,15 +5397,15 @@ function exportAnalyticsReport() {
 
 function cleanupAnalyticsPage() {
     // Destroy existing charts
-    if (window.analyticsChart) {
+    if (window.analyticsChart && typeof window.analyticsChart.destroy === 'function') {
         window.analyticsChart.destroy();
         window.analyticsChart = null;
     }
-    if (window.clientDistributionChart) {
+    if (window.clientDistributionChart && typeof window.clientDistributionChart.destroy === 'function') {
         window.clientDistributionChart.destroy();
         window.clientDistributionChart = null;
     }
-    if (window.statusBreakdownChart) {
+    if (window.statusBreakdownChart && typeof window.statusBreakdownChart.destroy === 'function') {
         window.statusBreakdownChart.destroy();
         window.statusBreakdownChart = null;
     }
