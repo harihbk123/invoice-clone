@@ -8831,6 +8831,26 @@ if (window.location.hostname === 'localhost' || window.location.hostname.include
 function addSampleDataIfEmpty() {
     console.log('Adding sample data if needed...');
     
+    // Ensure appData exists
+    if (!window.appData) {
+        window.appData = {
+            totalEarnings: 0,
+            totalClients: 0,
+            totalInvoices: 0,
+            monthlyEarnings: [],
+            clients: [],
+            invoices: [],
+            nextInvoiceNumber: 1,
+            dataLoaded: false,
+            settings: {
+                currency: 'INR',
+                taxRate: 0,
+                invoicePrefix: 'HP-2526',
+                profileName: 'Hariprasad Sivakumar'
+            }
+        };
+    }
+    
     if (appData.clients.length === 0) {
         appData.clients = [
             {
@@ -8926,11 +8946,34 @@ function emergencyInit() {
     console.log('🚨 Running emergency initialization...');
     
     try {
+        // Ensure appData exists globally
+        if (!window.appData) {
+            window.appData = {
+                totalEarnings: 0,
+                totalClients: 0,
+                totalInvoices: 0,
+                monthlyEarnings: [],
+                clients: [],
+                invoices: [],
+                nextInvoiceNumber: 1,
+                dataLoaded: false,
+                settings: {
+                    currency: 'INR',
+                    taxRate: 0,
+                    invoicePrefix: 'HP-2526',
+                    profileName: 'Hariprasad Sivakumar'
+                }
+            };
+        }
+        
         addSampleDataIfEmpty();
+        appData.dataLoaded = true;
+        
         setupNavigation();
         renderDashboard();
         
         showToast('App loaded with sample data. Database connection may be limited.', 'warning');
+        console.log('✅ Emergency init completed successfully');
     } catch (error) {
         console.error('Emergency init failed:', error);
         document.body.innerHTML = `
@@ -8990,3 +9033,8 @@ if (document.readyState === 'loading') {
     console.log('DOM already loaded, initializing immediately');
     setTimeout(initializeApp, 100);
 }
+
+// Make critical functions globally available for emergency fallback
+window.emergencyInit = emergencyInit;
+window.addSampleDataIfEmpty = addSampleDataIfEmpty;
+window.appData = appData;
