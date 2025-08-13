@@ -1,3 +1,16 @@
+// Renders the clients grid (used by search, filters, etc.)
+function renderClientsGrid() {
+    // This function should re-render the clients grid using appData.clients
+    // If you have a modern grid, call the main renderClients or similar
+    if (typeof renderClients === 'function') {
+        renderClients();
+    } else {
+        // Fallback: simple DOM update
+        const grid = document.getElementById('clients-grid-enhanced');
+        if (!grid) return;
+        grid.innerHTML = appData.clients.map(client => `<div>${client.name}</div>`).join('');
+    }
+}
 // ============================================
 // COMPLETE EXPENSE MANAGEMENT SYSTEM - FIXED VERSION
 // Place this BEFORE the checkAuth() function in your app.js
@@ -11,9 +24,9 @@ class ExpenseUI {
         this.expenseChart = null;
         this.categoryChart = null;
         this.currentFilters = {
-            category: 'all',
             dateFrom: null,
             dateTo: null,
+            category: 'all',
             paymentMethod: 'all',
             businessOnly: false
         };
@@ -21,56 +34,57 @@ class ExpenseUI {
 
     getExpensesPageHTML() {
         return `
-            <div class="page-header">
-                <div>
-                    <h1>💰 Expense Management</h1>
-                    <p style="color: var(--color-text-secondary); margin: 4px 0 0 0; font-size: 14px;">
-                        Track and manage your business expenses
-                    </p>
+            <!-- Enhanced Balance Cards -->
+            <div class="expense-balance-cards" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px;">
+                <div class="balance-card">
+                    <div class="balance-icon">💰</div>
+                    <div class="balance-content">
+                        <h3 id="total-expenses-value">₹0</h3>
+                        <p>Total Expenses</p>
+                    </div>
                 </div>
-                <div class="header-actions">
-                    <button class="btn btn--secondary btn--sm" id="export-expenses">📊 Export</button>
+                <div class="balance-card">
+                    <div class="balance-icon">📅</div>
+                    <div class="balance-content">
+                        <h3 id="month-expenses-value">₹0</h3>
+                        <p>This Month</p>
+                    </div>
+                </div>
+                <div class="balance-card">
+                    <div class="balance-icon">📊</div>
+                    <div class="balance-content">
+                        <h3 id="avg-expense-value">₹0</h3>
+                        <p>Average Expense</p>
+                    </div>
+                </div>
+                <div class="balance-card">
+                    <div class="balance-icon">🎯</div>
+                    <div class="balance-content">
+                        <h3 id="expense-count">0</h3>
+                        <p>Total Transactions</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Enhanced Filters Section -->
+            <div class="expense-filters-container" style="background: white; border-radius: 12px; padding: 20px; margin-bottom: 24px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                <div class="filters-header" style="display: flex; justify-content: between; align-items: center; margin-bottom: 16px;">
+                    <h3 style="margin: 0; color: var(--color-primary);">📋 Expense Filters</h3>
                     <button class="btn btn--primary" id="add-expense-btn">+ Add Expense</button>
                 </div>
-            </div>
-            
-            <!-- Summary Cards -->
-            <div class="metrics-grid" style="margin-bottom: 24px;">
-                <div class="metric-card">
-                    <div class="metric-value" id="total-expenses-value">₹0</div>
-                    <div class="metric-label">Total Expenses</div>
-                </div>
-                <div class="metric-card">
-                    <div class="metric-value" id="month-expenses-value">₹0</div>
-                    <div class="metric-label">This Month</div>
-                </div>
-                <div class="metric-card">
-                    <div class="metric-value" id="avg-expense-value">₹0</div>
-                    <div class="metric-label">Average Expense</div>
-                </div>
-                <div class="metric-card">
-                    <div class="metric-value" id="expense-count-value">0</div>
-                    <div class="metric-label">Total Transactions</div>
-                </div>
-            </div>
-            
-            <!-- Filters Section -->
-            <div class="expense-filters-section" style="background: var(--color-surface); padding: 20px; border-radius: 12px; margin-bottom: 24px; border: 1px solid var(--color-border);">
-                <h3 style="margin-bottom: 16px; font-size: 16px;">🔍 Filter Expenses</h3>
-                <div class="filters-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; align-items: end;">
+                <div class="filters-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; align-items: end;">
+                    <div class="form-group" style="margin: 0;">
+                        <label class="form-label" style="font-size: 12px;">Date Range</label>
+                        <div style="display: flex; gap: 8px;">
+                            <input type="date" class="form-control" id="filter-date-from" style="font-size: 12px;">
+                            <input type="date" class="form-control" id="filter-date-to" style="font-size: 12px;">
+                        </div>
+                    </div>
                     <div class="form-group" style="margin: 0;">
                         <label class="form-label" style="font-size: 12px;">Category</label>
                         <select class="form-control" id="filter-category">
                             <option value="all">All Categories</option>
                         </select>
-                    </div>
-                    <div class="form-group" style="margin: 0;">
-                        <label class="form-label" style="font-size: 12px;">From Date</label>
-                        <input type="date" class="form-control" id="filter-date-from">
-                    </div>
-                    <div class="form-group" style="margin: 0;">
-                        <label class="form-label" style="font-size: 12px;">To Date</label>
-                        <input type="date" class="form-control" id="filter-date-to">
                     </div>
                     <div class="form-group" style="margin: 0;">
                         <label class="form-label" style="font-size: 12px;">Payment Method</label>
@@ -3102,6 +3116,9 @@ function renderDashboard() {
     if (appData.invoices.length === 0) {
         showWelcomeMessage();
     }
+    
+    // Setup button event listeners
+    setupInvoicePageButtons();
 }
 
 function updateDashboardMetrics() {
@@ -3893,12 +3910,16 @@ function setupAnalyticsFilters() {
 
 // IMPROVED: Compact action buttons for invoices
 function renderInvoices() {
-    console.log('Rendering invoices...');
+    console.log('🎯 renderInvoices called - starting render');
     cleanupExpenseFilters();
     
     const invoicesPage = document.getElementById('invoices-page');
-    if (!invoicesPage) return;
+    if (!invoicesPage) {
+        console.error('❌ invoices-page element not found');
+        return;
+    }
     
+    console.log('📄 Building invoices page HTML...');
     // Create the full invoices page structure
     invoicesPage.innerHTML = `
         <div class="page-header">
@@ -3910,7 +3931,7 @@ function renderInvoices() {
             </div>
             <div class="header-actions">
                 <button class="btn btn--secondary btn--sm" id="export-invoices-btn">📊 Export</button>
-                <button class="btn btn--primary" id="create-invoice-btn">+ Create Invoice</button>
+                <button class="btn btn--primary" id="create-invoice-invoices-section">+ Create Invoice</button>
             </div>
         </div>
         
@@ -4047,16 +4068,58 @@ function renderInvoices() {
         </tr>
     `).join('');
 
-    // Setup event listeners for the create invoice button
-    const createInvoiceBtn = document.getElementById('create-invoice-btn');
+    // Setup event listeners for the create invoice button (immediate backup)
+    console.log('🔧 Setting up direct event listeners...');
+    
+    // Try to find create button - could be dashboard or invoices section
+    let createInvoiceBtn = document.getElementById('create-invoice-btn') || 
+                          document.getElementById('create-invoice-invoices-section');
+    
+    console.log('🎯 Direct create button found:', !!createInvoiceBtn, createInvoiceBtn?.id);
     if (createInvoiceBtn) {
-        createInvoiceBtn.addEventListener('click', () => {
-            if (typeof showInvoiceModal === 'function') {
-                showInvoiceModal();
+        // Remove any existing listeners
+        const newBtn = createInvoiceBtn.cloneNode(true);
+        createInvoiceBtn.parentNode.replaceChild(newBtn, createInvoiceBtn);
+        
+        newBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('🎯 DIRECT Create Invoice button clicked! Button ID:', newBtn.id);
+            if (typeof openInvoiceModal === 'function') {
+                openInvoiceModal();
             } else {
-                console.warn('showInvoiceModal function not found');
+                console.error('❌ openInvoiceModal function not found');
             }
         });
+        console.log('✅ Direct event listener attached successfully to:', newBtn.id);
+    }
+
+    // Setup export button (direct backup)
+    const directExportBtn = document.getElementById('export-invoices-btn');
+    console.log('🎯 Direct export button found:', !!directExportBtn);
+    if (directExportBtn) {
+        directExportBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('🎯 DIRECT Export button clicked!');
+            // Export functionality
+            const csvData = [
+                ['Invoice ID', 'Client', 'Amount', 'Date', 'Due Date', 'Status'],
+                ...appData.invoices.map(inv => [
+                    inv.id, inv.client, inv.amount, inv.date, inv.dueDate, inv.status
+                ])
+            ];
+            const csvContent = csvData.map(row => row.join(',')).join('\n');
+            const blob = new Blob([csvContent], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'invoices-export.csv';
+            a.click();
+            window.URL.revokeObjectURL(url);
+            showToast('Invoices exported successfully!', 'success');
+        });
+        console.log('✅ Direct export event listener attached successfully');
     }
 
     const filterTabs = document.querySelectorAll('.filter-tab');
@@ -4064,6 +4127,13 @@ function renderInvoices() {
         tab.removeEventListener('click', handleFilterClick);
         tab.addEventListener('click', handleFilterClick);
     });
+    
+    console.log('🔧 About to setup invoice page buttons...');
+    // Re-setup button event listeners after rendering with a small delay to ensure DOM is updated
+    setTimeout(() => {
+        setupInvoicePageButtons();
+    }, 100);
+    console.log('✅ renderInvoices completed');
 }
 
 function handleFilterClick(e) {
@@ -5128,6 +5198,10 @@ function renderAnalyticsChart(period = 'monthly') {
             }
         }
     });
+    
+    } catch (error) {
+        console.error('❌ Error rendering analytics chart:', error);
+    }
 }
 
 function renderClientDistributionChart(invoices, clients) {
@@ -5972,7 +6046,14 @@ async function openInvoiceModal(invoiceId = null) {
             const saveBtn = document.getElementById('save-invoice');
             if (saveBtn) {
                 saveBtn.textContent = 'Update Invoice';
-                saveBtn.onclick = () => saveInvoice(true);
+                saveBtn.onclick = (e) => {
+                    e.preventDefault();
+                    console.log('🎯 Save Invoice button clicked (editing existing)');
+                    saveInvoice(true);
+                };
+                console.log('✅ Save button setup complete for editing invoice');
+            } else {
+                console.error('❌ Save button not found for editing');
             }
         }
     } else {
@@ -6007,7 +6088,16 @@ async function openInvoiceModal(invoiceId = null) {
         // Generate invoice number
         const invoiceNumInput = document.getElementById('invoice-number');
         if (invoiceNumInput) {
-            const nextNumber = appData.invoices.length + 1;
+            // Find the highest existing invoice number
+            let maxNumber = 0;
+            appData.invoices.forEach(inv => {
+                const match = inv.id.match(/HP-2526-(\d+)/);
+                if (match) {
+                    const num = parseInt(match[1]);
+                    if (num > maxNumber) maxNumber = num;
+                }
+            });
+            const nextNumber = maxNumber + 1;
             invoiceNumInput.value = `${appData.settings.invoicePrefix}-${nextNumber.toString().padStart(3, '0')}`;
         }
 
@@ -6015,7 +6105,14 @@ async function openInvoiceModal(invoiceId = null) {
         const saveBtn = document.getElementById('save-invoice');
         if (saveBtn) {
             saveBtn.textContent = 'Save Invoice';
-            saveBtn.onclick = () => saveInvoice(false);
+            saveBtn.onclick = (e) => {
+                e.preventDefault();
+                console.log('🎯 Save Invoice button clicked (new invoice)');
+                saveInvoice(false);
+            };
+            console.log('✅ Save button setup complete for new invoice');
+        } else {
+            console.error('❌ Save button not found');
         }
     }
 
@@ -6219,7 +6316,16 @@ async function openInvoiceModal(invoiceId = null) {
             // Generate invoice number
             const invoiceNumInput = document.getElementById('invoice-number');
             if (invoiceNumInput) {
-                const nextNumber = appData.invoices.length + 1;
+                // Find the highest existing invoice number
+                let maxNumber = 0;
+                appData.invoices.forEach(inv => {
+                    const match = inv.id.match(/HP-2526-(\d+)/);
+                    if (match) {
+                        const num = parseInt(match[1]);
+                        if (num > maxNumber) maxNumber = num;
+                    }
+                });
+                const nextNumber = maxNumber + 1;
                 invoiceNumInput.value = `${appData.settings.invoicePrefix}-${nextNumber.toString().padStart(3, '0')}`;
             }
 
@@ -6554,23 +6660,76 @@ function setupInvoiceForm() {
 }
 
 function setupInvoicePageButtons() {
-    // Setup "Create Invoice" button on dashboard
+    console.log('🔧 Setting up invoice page buttons...');
+    
+    // Setup "Create Invoice" button (dashboard version)
     const createInvoiceBtn = document.getElementById('create-invoice-btn');
-    if (createInvoiceBtn && !createInvoiceBtn.hasAttribute('data-listener-attached')) {
-        createInvoiceBtn.setAttribute('data-listener-attached', 'true');
-        createInvoiceBtn.addEventListener('click', () => {
-            openInvoiceModal();
+    console.log('Dashboard create button found:', !!createInvoiceBtn);
+    if (createInvoiceBtn) {
+        // Remove existing listener if any
+        createInvoiceBtn.removeAttribute('data-listener-attached');
+        // Create new event listener
+        const newBtn = createInvoiceBtn.cloneNode(true);
+        createInvoiceBtn.parentNode.replaceChild(newBtn, createInvoiceBtn);
+        newBtn.setAttribute('data-listener-attached', 'true');
+        newBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('🎯 Dashboard Create Invoice button clicked - opening modal');
+            if (typeof openInvoiceModal === 'function') {
+                openInvoiceModal();
+            } else {
+                console.error('❌ openInvoiceModal function not found');
+            }
         });
+        console.log('✅ Dashboard create button event listener attached');
+    }
+
+    // Setup "Create Invoice" button (invoices section version)
+    const createInvoiceInvoicesBtn = document.getElementById('create-invoice-invoices-section');
+    console.log('Invoices section create button found:', !!createInvoiceInvoicesBtn);
+    if (createInvoiceInvoicesBtn) {
+        // Remove existing listener if any
+        createInvoiceInvoicesBtn.removeAttribute('data-listener-attached');
+        // Create new event listener
+        const newBtn = createInvoiceInvoicesBtn.cloneNode(true);
+        createInvoiceInvoicesBtn.parentNode.replaceChild(newBtn, createInvoiceInvoicesBtn);
+        newBtn.setAttribute('data-listener-attached', 'true');
+        newBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('🎯 Invoices section Create Invoice button clicked - opening modal');
+            if (typeof openInvoiceModal === 'function') {
+                openInvoiceModal();
+            } else {
+                console.error('❌ openInvoiceModal function not found');
+            }
+        });
+        console.log('✅ Invoices section create button event listener attached');
     }
     
     // Setup "New Invoice" button on invoices page
     const newInvoiceBtn = document.getElementById('new-invoice-btn');
-    if (newInvoiceBtn && !newInvoiceBtn.hasAttribute('data-listener-attached')) {
-        newInvoiceBtn.setAttribute('data-listener-attached', 'true');
-        newInvoiceBtn.addEventListener('click', () => {
-            openInvoiceModal();
+    if (newInvoiceBtn) {
+        newInvoiceBtn.removeAttribute('data-listener-attached');
+        const newBtn2 = newInvoiceBtn.cloneNode(true);
+        newInvoiceBtn.parentNode.replaceChild(newBtn2, newInvoiceBtn);
+        newBtn2.setAttribute('data-listener-attached', 'true');
+        newBtn2.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('🎯 New Invoice button clicked - opening modal');
+            if (typeof openInvoiceModal === 'function') {
+                openInvoiceModal();
+            } else {
+                console.error('❌ openInvoiceModal function not found');
+            }
         });
+        console.log('✅ New Invoice button event listener attached');
     }
+
+    
+    console.log('✅ Invoice page buttons setup complete');
 }
 
 function cleanupInvoiceListeners() {
@@ -6680,18 +6839,27 @@ function calculateInvoiceTotal() {
 
 let isSavingInvoice = false;
 async function saveInvoice(status) {
-    if (isSavingInvoice) return;
+    console.log('🚀 saveInvoice called with status:', status);
+    if (isSavingInvoice) {
+        console.log('⚠️ Already saving invoice, returning');
+        return;
+    }
     isSavingInvoice = true;
-    console.log('Saving invoice with status:', status);
+    console.log('💾 Starting to save invoice with status:', status);
 
     const invoiceNumberInput = document.getElementById('invoice-number');
     let invoiceNumber = invoiceNumberInput?.value;
+    console.log('📄 Invoice number:', invoiceNumber);
+    
     const clientSelect = document.getElementById('invoice-client');
     const clientId = clientSelect ? clientSelect.value : null;
+    console.log('👤 Selected client ID:', clientId);
 
     if (!clientId) {
+        console.log('❌ No client selected');
         showToast('Please select a client', 'error');
         clientSelect?.focus();
+        isSavingInvoice = false;
         return;
     }
 
@@ -9028,20 +9196,6 @@ window.emergencyInit = function() {
         };
     }
 };
-        console.log('✅ Emergency init completed successfully');
-    } catch (error) {
-        console.error('Emergency init failed:', error);
-        document.body.innerHTML = `
-            <div style="display: flex; align-items: center; justify-content: center; height: 100vh; background: #f8fafc;">
-                <div style="text-align: center; max-width: 500px; padding: 40px;">
-                    <h1 style="color: #ef4444; margin-bottom: 20px;">⚠️ App Error</h1>
-                    <p style="color: #64748b; margin-bottom: 30px;">The application failed to initialize. Please refresh the page or check the console for errors.</p>
-                    <button onclick="window.location.reload()" style="background: #3b82f6; color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer;">Refresh Page</button>
-                </div>
-            </div>
-        `;
-    }
-}
 
 // Add error handling for initialization
 window.addEventListener('error', (event) => {
