@@ -3919,60 +3919,291 @@ function renderInvoices() {
         return;
     }
     
-    console.log('📄 Building invoices page HTML...');
-    // Create the full invoices page structure
+    console.log('📄 Building enhanced invoices page HTML...');
+    
+    // Calculate comprehensive metrics
+    const totalInvoices = appData.invoices.length;
+    const totalRevenue = appData.invoices.reduce((sum, inv) => sum + inv.amount, 0);
+    const pendingInvoices = appData.invoices.filter(inv => inv.status === 'Pending').length;
+    const paidInvoices = appData.invoices.filter(inv => inv.status === 'Paid').length;
+    const overdueInvoices = appData.invoices.filter(inv => {
+        const dueDate = new Date(inv.dueDate);
+        const today = new Date();
+        return inv.status === 'Pending' && dueDate < today;
+    }).length;
+    
+    // Get current month data for filtering
+    const currentMonth = new Date().getMonth();
+    const currentYear = new Date().getFullYear();
+    const currentMonthInvoices = appData.invoices.filter(inv => {
+        const invDate = new Date(inv.date);
+        return invDate.getMonth() === currentMonth && invDate.getFullYear() === currentYear;
+    });
+    
+    // Create the enhanced invoices page structure
     invoicesPage.innerHTML = `
-        <div class="page-header">
-            <div>
-                <h1>📄 Invoices</h1>
-                <p style="color: var(--text-muted); margin: 8px 0 0 0; font-size: 14px;">
-                    Manage and track all your invoices
-                </p>
+        <div class="invoices-hero-section">
+            <div class="hero-header">
+                <div class="hero-title-area">
+                    <div class="hero-badge">
+                        <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/>
+                        </svg>
+                        Invoice Management
+                    </div>
+                    <h1 class="hero-main-title">Invoices</h1>
+                    <p class="hero-subtitle">Manage and track all your invoices with advanced filtering</p>
+                </div>
+                <div class="hero-actions">
+                    <div class="search-container">
+                        <input type="text" id="invoice-search-input" placeholder="Search invoices..." class="search-input">
+                        <svg class="search-icon" width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+                        </svg>
+                        <button id="clear-invoice-search" class="clear-search" style="display: none;">×</button>
+                    </div>
+                    <button class="btn-modern btn-secondary" id="export-invoices-btn">
+                        <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/>
+                        </svg>
+                        Export
+                    </button>
+                    <button class="btn-modern btn-primary" id="create-invoice-invoices-section">
+                        <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+                        </svg>
+                        Create Invoice
+                    </button>
+                </div>
             </div>
-            <div class="header-actions">
-                <button class="btn btn--secondary btn--sm" id="export-invoices-btn">📊 Export</button>
-                <button class="btn btn--primary" id="create-invoice-invoices-section">+ Create Invoice</button>
+        </div>
+
+        <!-- Enhanced Metrics Section -->
+        <div class="enhanced-metrics-section">
+            <div class="metrics-container">
+                <div class="metric-card-modern">
+                    <div class="metric-header">
+                        <div class="metric-icon metric-icon-blue">
+                            <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2Z"/>
+                            </svg>
+                        </div>
+                        <div class="metric-change positive">
+                            <svg width="12" height="12" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M7 14l5-5 5 5z"/>
+                            </svg>
+                            +12%
+                        </div>
+                    </div>
+                    <div class="metric-content">
+                        <div class="metric-value" id="total-invoices-value">${totalInvoices}</div>
+                        <div class="metric-label">Total Invoices</div>
+                        <div class="metric-subtitle">+${currentMonthInvoices.length} this month</div>
+                    </div>
+                </div>
+
+                <div class="metric-card-modern">
+                    <div class="metric-header">
+                        <div class="metric-icon metric-icon-green">
+                            <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M7,15H9C9,16.08 10.37,17 12,17C13.63,17 15,16.08 15,15C15,13.9 13.96,13.5 11.76,12.97C9.64,12.44 7,11.78 7,9C7,7.21 8.47,5.69 10.5,5.18V3H13.5V5.18C15.53,5.69 17,7.21 17,9H15C15,7.92 13.63,7 12,7C10.37,7 9,7.92 9,9C9,10.1 10.04,10.5 12.24,11.03C14.36,11.56 17,12.22 17,15C17,16.79 15.53,18.31 13.5,18.82V21H10.5V18.82C8.47,18.31 7,16.79 7,15Z"/>
+                            </svg>
+                        </div>
+                        <div class="metric-change positive">
+                            <svg width="12" height="12" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M7 14l5-5 5 5z"/>
+                            </svg>
+                            +8%
+                        </div>
+                    </div>
+                    <div class="metric-content">
+                        <div class="metric-value" id="total-revenue-value">₹${formatNumber(totalRevenue)}</div>
+                        <div class="metric-label">Total Revenue</div>
+                        <div class="metric-subtitle">₹${formatNumber(currentMonthInvoices.reduce((sum, inv) => sum + inv.amount, 0))} this month</div>
+                    </div>
+                </div>
+
+                <div class="metric-card-modern">
+                    <div class="metric-header">
+                        <div class="metric-icon metric-icon-orange">
+                            <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M12,20A8,8 0 0,0 20,12A8,8 0 0,0 12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20M12,2A10,10 0 0,1 22,12A10,10 0 0,1 12,22C6.47,22 2,17.5 2,12A10,10 0 0,1 12,2M12.5,7V12.25L17,14.92L16.25,16.15L11,13V7H12.5Z"/>
+                            </svg>
+                        </div>
+                        <div class="metric-change ${pendingInvoices > 0 ? 'neutral' : 'positive'}">
+                            ${pendingInvoices > 0 ? '⏳' : '✅'}
+                        </div>
+                    </div>
+                    <div class="metric-content">
+                        <div class="metric-value" id="pending-invoices-value">${pendingInvoices}</div>
+                        <div class="metric-label">Pending</div>
+                        <div class="metric-subtitle">${overdueInvoices} overdue</div>
+                    </div>
+                </div>
+
+                <div class="metric-card-modern">
+                    <div class="metric-header">
+                        <div class="metric-icon metric-icon-purple">
+                            <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M12,2A10,10 0 0,1 22,12A10,10 0 0,1 12,22A10,10 0 0,1 2,12A10,10 0 0,1 12,2M11,16.5L18,9.5L16.59,8.09L11,13.67L7.91,10.59L6.5,12L11,16.5Z"/>
+                            </svg>
+                        </div>
+                        <div class="metric-change positive">
+                            <svg width="12" height="12" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M7 14l5-5 5 5z"/>
+                            </svg>
+                            +5%
+                        </div>
+                    </div>
+                    <div class="metric-content">
+                        <div class="metric-value" id="paid-invoices-value">${paidInvoices}</div>
+                        <div class="metric-label">Paid</div>
+                        <div class="metric-subtitle">${Math.round((paidInvoices/totalInvoices)*100) || 0}% completion rate</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Advanced Filters Section -->
+        <div class="filters-section">
+            <div class="filters-container">
+                <div class="filter-group">
+                    <label for="month-filter">Filter by Month:</label>
+                    <select id="month-filter" class="filter-select">
+                        <option value="all">All Months</option>
+                        <option value="2025-08">August 2025</option>
+                        <option value="2025-07">July 2025</option>
+                        <option value="2025-06">June 2025</option>
+                        <option value="2025-05">May 2025</option>
+                        <option value="2025-04">April 2025</option>
+                        <option value="2025-03">March 2025</option>
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label for="status-filter">Status:</label>
+                    <select id="status-filter" class="filter-select">
+                        <option value="all">All Status</option>
+                        <option value="Paid">Paid</option>
+                        <option value="Pending">Pending</option>
+                        <option value="Overdue">Overdue</option>
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label for="client-filter">Client:</label>
+                    <select id="client-filter" class="filter-select">
+                        <option value="all">All Clients</option>
+                        ${[...new Set(appData.invoices.map(inv => inv.client))].map(client => 
+                            `<option value="${client}">${client}</option>`
+                        ).join('')}
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label for="date-range-start">Date Range:</label>
+                    <div class="date-range-container">
+                        <input type="date" id="date-range-start" class="filter-date">
+                        <span class="date-separator">to</span>
+                        <input type="date" id="date-range-end" class="filter-date">
+                    </div>
+                </div>
+                
+                <div class="filter-actions">
+                    <button id="apply-filters" class="btn btn--secondary btn--sm">Apply Filters</button>
+                    <button id="clear-filters" class="btn btn--outline btn--sm">Clear All</button>
+                    <button id="export-filtered" class="btn btn--primary btn--sm">Export Filtered</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results Status -->
+        <div class="results-status" id="results-status">
+            <div class="status-info">
+                <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2Z"/>
+                </svg>
+                <span id="results-count">Showing ${totalInvoices} invoices</span>
             </div>
         </div>
         
-        <!-- Summary Cards -->
-        <div class="metrics-grid" style="margin-bottom: 24px;">
-            <div class="metric-card">
-                <div class="metric-value" id="total-invoices-value">${appData.invoices.length}</div>
-                <div class="metric-label">Total Invoices</div>
+        <!-- Enhanced Invoices Table -->
+        <div class="enhanced-table-container">
+            <div class="table-header">
+                <div class="table-title">Invoice List</div>
+                <div class="table-controls">
+                    <button class="table-control-btn" id="bulk-actions-btn" disabled>
+                        <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M9,20.42L2.79,14.21L5.62,11.38L9,14.77L18.88,4.88L21.71,7.71L9,20.42Z"/>
+                        </svg>
+                        Bulk Actions
+                    </button>
+                    <div class="view-toggle">
+                        <button class="view-btn active" data-view="table">
+                            <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M3,3H21V5H3V3M3,7H21V9H3V7M3,11H21V13H3V11M3,15H21V17H3V15M3,19H21V21H3V19Z"/>
+                            </svg>
+                        </button>
+                        <button class="view-btn" data-view="cards">
+                            <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M3,11H11V3H3M3,21H11V13H3M13,21H21V13H13M13,3V11H21V3"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
             </div>
-            <div class="metric-card">
-                <div class="metric-value" id="total-revenue-value">₹${formatNumber(appData.invoices.reduce((sum, inv) => sum + inv.amount, 0))}</div>
-                <div class="metric-label">Total Revenue</div>
-            </div>
-            <div class="metric-card">
-                <div class="metric-value" id="pending-invoices-value">${appData.invoices.filter(inv => inv.status === 'Pending').length}</div>
-                <div class="metric-label">Pending</div>
-            </div>
-            <div class="metric-card">
-                <div class="metric-value" id="paid-invoices-value">${appData.invoices.filter(inv => inv.status === 'Paid').length}</div>
-                <div class="metric-label">Paid</div>
+            
+            <div class="table-wrapper">
+                <table class="enhanced-invoices-table">
+                    <thead>
+                        <tr>
+                            <th class="select-column">
+                                <input type="checkbox" id="select-all-invoices" class="checkbox-modern">
+                            </th>
+                            <th class="sortable" data-sort="id">
+                                Invoice #
+                                <svg width="12" height="12" fill="currentColor" viewBox="0 0 24 24" class="sort-icon">
+                                    <path d="M7 10l5 5 5-5z"/>
+                                </svg>
+                            </th>
+                            <th class="sortable" data-sort="client">
+                                Client
+                                <svg width="12" height="12" fill="currentColor" viewBox="0 0 24 24" class="sort-icon">
+                                    <path d="M7 10l5 5 5-5z"/>
+                                </svg>
+                            </th>
+                            <th class="sortable" data-sort="amount">
+                                Amount
+                                <svg width="12" height="12" fill="currentColor" viewBox="0 0 24 24" class="sort-icon">
+                                    <path d="M7 10l5 5 5-5z"/>
+                                </svg>
+                            </th>
+                            <th class="sortable" data-sort="date">
+                                Date
+                                <svg width="12" height="12" fill="currentColor" viewBox="0 0 24 24" class="sort-icon">
+                                    <path d="M7 10l5 5 5-5z"/>
+                                </svg>
+                            </th>
+                            <th class="sortable" data-sort="dueDate">
+                                Due Date
+                                <svg width="12" height="12" fill="currentColor" viewBox="0 0 24 24" class="sort-icon">
+                                    <path d="M7 10l5 5 5-5z"/>
+                                </svg>
+                            </th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="invoices-body">
+                        <!-- Will be populated by renderInvoicesTable() -->
+                    </tbody>
+                </table>
             </div>
         </div>
-        
-        <!-- Invoices Table -->
-        <div class="table-container">
-            <table class="invoices-table">
-                <thead>
-                    <tr>
-                        <th>Invoice #</th>
-                        <th>Client</th>
-                        <th>Amount</th>
-                        <th>Date</th>
-                        <th>Due Date</th>
-                        <th>Status</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody id="invoices-body">
-                    <!-- Will be populated below -->
-                </tbody>
-            </table>
+
+        <!-- Cards View (hidden by default) -->
+        <div class="invoices-cards-container" id="invoices-cards" style="display: none;">
+            <!-- Will be populated by renderInvoicesCards() -->
         </div>
     `;
     
@@ -4128,12 +4359,18 @@ function renderInvoices() {
         tab.addEventListener('click', handleFilterClick);
     });
     
+    // Initialize the enhanced invoices page
+    renderInvoicesTable(appData.invoices);
+    setupInvoiceFilters();
+    setupInvoiceSearch();
+    setupTableControls();
+    
     console.log('🔧 About to setup invoice page buttons...');
     // Re-setup button event listeners after rendering with a small delay to ensure DOM is updated
     setTimeout(() => {
         setupInvoicePageButtons();
     }, 100);
-    console.log('✅ renderInvoices completed');
+    console.log('✅ Enhanced renderInvoices completed');
 }
 
 function handleFilterClick(e) {
@@ -4195,6 +4432,557 @@ function calculateAllClientTotals() {
     });
     
     console.log('Client totals calculation completed');
+}
+
+// Enhanced Invoice Management Functions
+function renderInvoicesTable(invoices = appData.invoices) {
+    const tbody = document.getElementById('invoices-body');
+    if (!tbody) return;
+    
+    console.log('Rendering invoices table with', invoices.length, 'invoices');
+    
+    tbody.innerHTML = invoices.map(invoice => {
+        const dueDate = new Date(invoice.dueDate);
+        const today = new Date();
+        const isOverdue = invoice.status === 'Pending' && dueDate < today;
+        const statusClass = isOverdue ? 'overdue' : invoice.status.toLowerCase();
+        
+        return `
+            <tr class="invoice-row" data-invoice-id="${invoice.id}">
+                <td class="select-column">
+                    <input type="checkbox" class="invoice-checkbox checkbox-modern" value="${invoice.id}">
+                </td>
+                <td class="invoice-id">
+                    <div class="invoice-number">
+                        <span class="id-text">${invoice.id}</span>
+                        ${isOverdue ? '<span class="overdue-indicator">⚠️</span>' : ''}
+                    </div>
+                </td>
+                <td class="client-cell">
+                    <div class="client-info">
+                        <span class="client-name">${invoice.client}</span>
+                        <span class="client-subtitle">Invoice</span>
+                    </div>
+                </td>
+                <td class="amount-cell">
+                    <div class="amount-display">
+                        <span class="currency">₹</span>
+                        <span class="amount">${formatNumber(invoice.amount)}</span>
+                    </div>
+                </td>
+                <td class="date-cell">
+                    <div class="date-info">
+                        <span class="date">${formatDate(invoice.date)}</span>
+                        <span class="date-subtitle">${getRelativeDate(invoice.date)}</span>
+                    </div>
+                </td>
+                <td class="due-date-cell">
+                    <div class="date-info ${isOverdue ? 'overdue' : ''}">
+                        <span class="date">${formatDate(invoice.dueDate)}</span>
+                        <span class="date-subtitle">${isOverdue ? 'Overdue' : getRelativeDate(invoice.dueDate)}</span>
+                    </div>
+                </td>
+                <td class="status-cell">
+                    <span class="status-badge status-${statusClass}">
+                        ${isOverdue ? 'Overdue' : invoice.status}
+                    </span>
+                </td>
+                <td class="actions-cell">
+                    <div class="action-buttons">
+                        <button class="action-btn view" onclick="viewInvoice('${invoice.id}')" title="View Invoice">
+                            <svg width="12" height="12" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M12,9A3,3 0 0,0 9,12A3,3 0 0,0 12,15A3,3 0 0,0 15,12A3,3 0 0,0 12,9M12,17A5,5 0 0,1 7,12A5,5 0 0,1 12,7A5,5 0 0,1 17,12A5,5 0 0,1 12,17M12,4.5C7,4.5 2.73,7.61 1,12C2.73,16.39 7,19.5 12,19.5C17,19.5 21.27,16.39 23,12C21.27,7.61 17,4.5 12,4.5Z"/>
+                            </svg>
+                        </button>
+                        <button class="action-btn download" onclick="downloadInvoice('${invoice.id}')" title="Download Invoice">
+                            <svg width="12" height="12" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/>
+                            </svg>
+                        </button>
+                        <button class="action-btn edit" onclick="editInvoice('${invoice.id}')" title="Edit Invoice">
+                            <svg width="12" height="12" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M20.71,7.04C21.1,6.65 21.1,6 20.71,5.63L18.37,3.29C18,2.9 17.35,2.9 16.96,3.29L15.12,5.12L18.87,8.87M3,17.25V21H6.75L17.81,9.93L14.06,6.18L3,17.25Z"/>
+                            </svg>
+                        </button>
+                        <button class="action-btn delete" onclick="deleteInvoice('${invoice.id}')" title="Delete Invoice">
+                            <svg width="12" height="12" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19Z"/>
+                            </svg>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `;
+    }).join('');
+    
+    // Update results count
+    updateResultsCount(invoices.length);
+}
+
+function setupInvoiceFilters() {
+    console.log('Setting up invoice filters...');
+    
+    // Month filter
+    const monthFilter = document.getElementById('month-filter');
+    if (monthFilter) {
+        monthFilter.addEventListener('change', applyFilters);
+    }
+    
+    // Status filter
+    const statusFilter = document.getElementById('status-filter');
+    if (statusFilter) {
+        statusFilter.addEventListener('change', applyFilters);
+    }
+    
+    // Client filter
+    const clientFilter = document.getElementById('client-filter');
+    if (clientFilter) {
+        clientFilter.addEventListener('change', applyFilters);
+    }
+    
+    // Date range filters
+    const dateStart = document.getElementById('date-range-start');
+    const dateEnd = document.getElementById('date-range-end');
+    if (dateStart && dateEnd) {
+        dateStart.addEventListener('change', applyFilters);
+        dateEnd.addEventListener('change', applyFilters);
+    }
+    
+    // Filter action buttons
+    const applyBtn = document.getElementById('apply-filters');
+    if (applyBtn) {
+        applyBtn.addEventListener('click', applyFilters);
+    }
+    
+    const clearBtn = document.getElementById('clear-filters');
+    if (clearBtn) {
+        clearBtn.addEventListener('click', clearAllFilters);
+    }
+    
+    const exportFilteredBtn = document.getElementById('export-filtered');
+    if (exportFilteredBtn) {
+        exportFilteredBtn.addEventListener('click', exportFilteredInvoices);
+    }
+}
+
+function setupInvoiceSearch() {
+    const searchInput = document.getElementById('invoice-search-input');
+    const clearSearch = document.getElementById('clear-invoice-search');
+    
+    if (searchInput) {
+        searchInput.addEventListener('input', (e) => {
+            const query = e.target.value.toLowerCase().trim();
+            if (query) {
+                performInvoiceSearch(query);
+                if (clearSearch) clearSearch.style.display = 'block';
+            } else {
+                applyFilters(); // Show all invoices
+                if (clearSearch) clearSearch.style.display = 'none';
+            }
+        });
+    }
+    
+    if (clearSearch) {
+        clearSearch.addEventListener('click', () => {
+            searchInput.value = '';
+            applyFilters();
+            clearSearch.style.display = 'none';
+            searchInput.focus();
+        });
+    }
+}
+
+function setupTableControls() {
+    // Sorting
+    const sortableHeaders = document.querySelectorAll('.sortable');
+    sortableHeaders.forEach(header => {
+        header.addEventListener('click', () => {
+            const sortField = header.dataset.sort;
+            const currentSort = header.classList.contains('sort-asc') ? 'asc' : 
+                              header.classList.contains('sort-desc') ? 'desc' : 'none';
+            
+            // Remove all sort classes
+            sortableHeaders.forEach(h => h.classList.remove('sort-asc', 'sort-desc'));
+            
+            // Apply new sort
+            let newSort;
+            if (currentSort === 'none') newSort = 'asc';
+            else if (currentSort === 'asc') newSort = 'desc';
+            else newSort = 'asc';
+            
+            header.classList.add(`sort-${newSort}`);
+            sortInvoices(sortField, newSort);
+        });
+    });
+    
+    // Select all checkbox
+    const selectAllCheckbox = document.getElementById('select-all-invoices');
+    if (selectAllCheckbox) {
+        selectAllCheckbox.addEventListener('change', (e) => {
+            const checkboxes = document.querySelectorAll('.invoice-checkbox');
+            checkboxes.forEach(cb => cb.checked = e.target.checked);
+            updateBulkActionsButton();
+        });
+    }
+    
+    // Individual checkboxes
+    document.addEventListener('change', (e) => {
+        if (e.target.classList.contains('invoice-checkbox')) {
+            updateBulkActionsButton();
+        }
+    });
+    
+    // View toggle
+    const viewButtons = document.querySelectorAll('.view-btn');
+    viewButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            viewButtons.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            
+            const view = btn.dataset.view;
+            toggleInvoiceView(view);
+        });
+    });
+}
+
+function applyFilters() {
+    console.log('Applying invoice filters...');
+    
+    let filteredInvoices = [...appData.invoices];
+    
+    // Month filter
+    const monthFilter = document.getElementById('month-filter');
+    if (monthFilter && monthFilter.value !== 'all') {
+        const [year, month] = monthFilter.value.split('-');
+        filteredInvoices = filteredInvoices.filter(invoice => {
+            const invDate = new Date(invoice.date);
+            return invDate.getFullYear() == year && invDate.getMonth() == (month - 1);
+        });
+    }
+    
+    // Status filter
+    const statusFilter = document.getElementById('status-filter');
+    if (statusFilter && statusFilter.value !== 'all') {
+        if (statusFilter.value === 'Overdue') {
+            filteredInvoices = filteredInvoices.filter(invoice => {
+                const dueDate = new Date(invoice.dueDate);
+                const today = new Date();
+                return invoice.status === 'Pending' && dueDate < today;
+            });
+        } else {
+            filteredInvoices = filteredInvoices.filter(invoice => invoice.status === statusFilter.value);
+        }
+    }
+    
+    // Client filter
+    const clientFilter = document.getElementById('client-filter');
+    if (clientFilter && clientFilter.value !== 'all') {
+        filteredInvoices = filteredInvoices.filter(invoice => invoice.client === clientFilter.value);
+    }
+    
+    // Date range filter
+    const dateStart = document.getElementById('date-range-start');
+    const dateEnd = document.getElementById('date-range-end');
+    if (dateStart && dateStart.value) {
+        filteredInvoices = filteredInvoices.filter(invoice => 
+            new Date(invoice.date) >= new Date(dateStart.value)
+        );
+    }
+    if (dateEnd && dateEnd.value) {
+        filteredInvoices = filteredInvoices.filter(invoice => 
+            new Date(invoice.date) <= new Date(dateEnd.value)
+        );
+    }
+    
+    renderInvoicesTable(filteredInvoices);
+    console.log(`Filtered ${appData.invoices.length} to ${filteredInvoices.length} invoices`);
+}
+
+function clearAllFilters() {
+    // Reset all filter controls
+    const monthFilter = document.getElementById('month-filter');
+    const statusFilter = document.getElementById('status-filter');
+    const clientFilter = document.getElementById('client-filter');
+    const dateStart = document.getElementById('date-range-start');
+    const dateEnd = document.getElementById('date-range-end');
+    const searchInput = document.getElementById('invoice-search-input');
+    
+    if (monthFilter) monthFilter.value = 'all';
+    if (statusFilter) statusFilter.value = 'all';
+    if (clientFilter) clientFilter.value = 'all';
+    if (dateStart) dateStart.value = '';
+    if (dateEnd) dateEnd.value = '';
+    if (searchInput) searchInput.value = '';
+    
+    // Show all invoices
+    renderInvoicesTable(appData.invoices);
+    showToast('All filters cleared', 'info');
+}
+
+function performInvoiceSearch(query) {
+    const filteredInvoices = appData.invoices.filter(invoice => 
+        invoice.id.toLowerCase().includes(query) ||
+        invoice.client.toLowerCase().includes(query) ||
+        invoice.status.toLowerCase().includes(query) ||
+        invoice.amount.toString().includes(query)
+    );
+    
+    renderInvoicesTable(filteredInvoices);
+}
+
+function exportFilteredInvoices() {
+    const visibleRows = document.querySelectorAll('#invoices-body tr:not([style*="display: none"])');
+    const visibleInvoiceIds = Array.from(visibleRows).map(row => row.dataset.invoiceId);
+    const filteredInvoices = appData.invoices.filter(inv => visibleInvoiceIds.includes(inv.id));
+    
+    if (filteredInvoices.length === 0) {
+        showToast('No invoices to export', 'warning');
+        return;
+    }
+    
+    // Get filter info for filename
+    const monthFilter = document.getElementById('month-filter');
+    const statusFilter = document.getElementById('status-filter');
+    const clientFilter = document.getElementById('client-filter');
+    
+    let filename = 'invoices-filtered';
+    if (monthFilter && monthFilter.value !== 'all') {
+        filename += `-${monthFilter.value}`;
+    }
+    if (statusFilter && statusFilter.value !== 'all') {
+        filename += `-${statusFilter.value.toLowerCase()}`;
+    }
+    if (clientFilter && clientFilter.value !== 'all') {
+        filename += `-${clientFilter.value.toLowerCase().replace(/\s+/g, '-')}`;
+    }
+    filename += '.csv';
+    
+    const csvData = [
+        ['Invoice ID', 'Client', 'Amount', 'Date', 'Due Date', 'Status'],
+        ...filteredInvoices.map(inv => [
+            inv.id, inv.client, inv.amount, inv.date, inv.dueDate, inv.status
+        ])
+    ];
+    
+    const csvContent = csvData.map(row => row.join(',')).join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    window.URL.revokeObjectURL(url);
+    
+    showToast(`Exported ${filteredInvoices.length} filtered invoices`, 'success');
+}
+
+function sortInvoices(field, direction) {
+    const tbody = document.getElementById('invoices-body');
+    const rows = Array.from(tbody.querySelectorAll('tr'));
+    
+    rows.sort((a, b) => {
+        let aVal, bVal;
+        
+        switch(field) {
+            case 'id':
+                aVal = a.querySelector('.invoice-number .id-text').textContent;
+                bVal = b.querySelector('.invoice-number .id-text').textContent;
+                break;
+            case 'client':
+                aVal = a.querySelector('.client-name').textContent;
+                bVal = b.querySelector('.client-name').textContent;
+                break;
+            case 'amount':
+                aVal = parseFloat(a.querySelector('.amount').textContent.replace(/[,\s]/g, ''));
+                bVal = parseFloat(b.querySelector('.amount').textContent.replace(/[,\s]/g, ''));
+                return direction === 'asc' ? aVal - bVal : bVal - aVal;
+            case 'date':
+            case 'dueDate':
+                const dateCell = field === 'date' ? '.date-cell .date' : '.due-date-cell .date';
+                aVal = new Date(a.querySelector(dateCell).textContent);
+                bVal = new Date(b.querySelector(dateCell).textContent);
+                return direction === 'asc' ? aVal - bVal : bVal - aVal;
+            default:
+                aVal = a.textContent;
+                bVal = b.textContent;
+        }
+        
+        if (typeof aVal === 'string') {
+            return direction === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
+        }
+        
+        return direction === 'asc' ? aVal - bVal : bVal - aVal;
+    });
+    
+    // Reorder DOM elements
+    rows.forEach(row => tbody.appendChild(row));
+}
+
+function updateBulkActionsButton() {
+    const selectedCheckboxes = document.querySelectorAll('.invoice-checkbox:checked');
+    const bulkBtn = document.getElementById('bulk-actions-btn');
+    
+    if (bulkBtn) {
+        bulkBtn.disabled = selectedCheckboxes.length === 0;
+        bulkBtn.textContent = selectedCheckboxes.length > 0 ? 
+            `Bulk Actions (${selectedCheckboxes.length})` : 'Bulk Actions';
+    }
+}
+
+function updateResultsCount(count) {
+    const resultsCount = document.getElementById('results-count');
+    if (resultsCount) {
+        const total = appData.invoices.length;
+        resultsCount.textContent = count === total ? 
+            `Showing ${count} invoices` : 
+            `Showing ${count} of ${total} invoices`;
+    }
+}
+
+function toggleInvoiceView(view) {
+    const tableContainer = document.querySelector('.enhanced-table-container');
+    const cardsContainer = document.getElementById('invoices-cards');
+    
+    if (view === 'cards') {
+        tableContainer.style.display = 'none';
+        cardsContainer.style.display = 'block';
+        renderInvoicesCards();
+    } else {
+        tableContainer.style.display = 'block';
+        cardsContainer.style.display = 'none';
+    }
+}
+
+function renderInvoicesCards() {
+    const cardsContainer = document.getElementById('invoices-cards');
+    if (!cardsContainer) return;
+    
+    const visibleRows = document.querySelectorAll('#invoices-body tr:not([style*="display: none"])');
+    const visibleInvoiceIds = Array.from(visibleRows).map(row => row.dataset.invoiceId);
+    const filteredInvoices = appData.invoices.filter(inv => visibleInvoiceIds.includes(inv.id));
+    
+    cardsContainer.innerHTML = filteredInvoices.map(invoice => {
+        const dueDate = new Date(invoice.dueDate);
+        const today = new Date();
+        const isOverdue = invoice.status === 'Pending' && dueDate < today;
+        const statusClass = isOverdue ? 'overdue' : invoice.status.toLowerCase();
+        
+        return `
+            <div class="invoice-card" data-invoice-id="${invoice.id}">
+                <div class="card-header">
+                    <div class="invoice-number">${invoice.id}</div>
+                    <span class="status-badge status-${statusClass}">
+                        ${isOverdue ? 'Overdue' : invoice.status}
+                    </span>
+                </div>
+                <div class="card-content">
+                    <div class="client-name">${invoice.client}</div>
+                    <div class="amount">₹${formatNumber(invoice.amount)}</div>
+                    <div class="dates">
+                        <div>Date: ${formatDate(invoice.date)}</div>
+                        <div>Due: ${formatDate(invoice.dueDate)}</div>
+                    </div>
+                </div>
+                <div class="card-actions">
+                    <button class="card-btn view" onclick="viewInvoice('${invoice.id}')">View</button>
+                    <button class="card-btn edit" onclick="editInvoice('${invoice.id}')">Edit</button>
+                    <button class="card-btn delete" onclick="deleteInvoice('${invoice.id}')">Delete</button>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+// Helper functions
+function formatDate(dateString) {
+    return new Date(dateString).toLocaleDateString('en-GB', {
+        day: '2-digit',
+        month: '2-digit', 
+        year: 'numeric'
+    });
+}
+
+function getRelativeDate(dateString) {
+    const date = new Date(dateString);
+    const today = new Date();
+    const diffTime = date - today;
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 0) return 'Today';
+    if (diffDays === 1) return 'Tomorrow';
+    if (diffDays === -1) return 'Yesterday';
+    if (diffDays > 0) return `In ${diffDays} days`;
+    return `${Math.abs(diffDays)} days ago`;
+}
+
+function viewInvoice(invoiceId) {
+    console.log('Viewing invoice:', invoiceId);
+    // Implementation for viewing invoice details
+    showToast(`Viewing invoice ${invoiceId}`, 'info');
+}
+
+function editInvoice(invoiceId) {
+    console.log('Editing invoice:', invoiceId);
+    const invoice = appData.invoices.find(inv => inv.id === invoiceId);
+    if (invoice) {
+        openInvoiceModal(invoice);
+    }
+}
+
+function deleteInvoice(invoiceId) {
+    if (confirm('Are you sure you want to delete this invoice?')) {
+        appData.invoices = appData.invoices.filter(inv => inv.id !== invoiceId);
+        saveData();
+        applyFilters(); // Refresh the current view
+        showToast('Invoice deleted successfully', 'success');
+    }
+}
+
+function downloadInvoice(invoiceId) {
+    console.log('Downloading invoice:', invoiceId);
+    
+    const invoice = appData.invoices.find(inv => inv.id === invoiceId);
+    if (!invoice) {
+        showToast('Invoice not found', 'error');
+        return;
+    }
+
+    // Create invoice content
+    const invoiceContent = `
+INVOICE
+
+Invoice ID: ${invoice.id}
+Date: ${invoice.date}
+Due Date: ${invoice.dueDate}
+Status: ${invoice.status}
+
+Client: ${invoice.client}
+${invoice.clientAddress || ''}
+
+Items:
+${invoice.items ? invoice.items.map(item => 
+    `${item.description} - Qty: ${item.quantity} x $${item.rate} = $${item.amount}`
+).join('\n') : 'No items listed'}
+
+Subtotal: $${invoice.subtotal || invoice.amount}
+Tax: $${invoice.tax || '0.00'}
+Total: $${invoice.amount}
+
+Notes: ${invoice.notes || 'No additional notes'}
+    `.trim();
+
+    // Create and download file
+    const blob = new Blob([invoiceContent], { type: 'text/plain' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `invoice-${invoice.id}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+    
+    showToast(`Invoice ${invoice.id} downloaded successfully`, 'success');
 }
 
 function renderClients() {
