@@ -883,20 +883,19 @@ class ExpenseUI {
     }
 
     attachModalEventListeners() {
-
-        // Save expense button
-        const saveExpenseBtn = document.getElementById('save-expense-btn');
-        if (saveExpenseBtn) {
-            saveExpenseBtn.addEventListener('click', () => this.saveExpense());
-        }
-
-        // Form submission handling
+        // Form submission handling (handles both submit button click and form submit)
         const expenseForm = document.getElementById('expense-form');
         if (expenseForm) {
-            expenseForm.addEventListener('submit', (e) => {
+            // Remove existing listeners to prevent duplicates
+            expenseForm.removeEventListener('submit', this.handleExpenseSubmit);
+            
+            // Create bound handler that we can reference for removal
+            this.handleExpenseSubmit = (e) => {
                 e.preventDefault();
                 this.saveExpense();
-            });
+            };
+            
+            expenseForm.addEventListener('submit', this.handleExpenseSubmit);
         }
 
         // Add Category button
@@ -1599,9 +1598,19 @@ class ExpenseUI {
     }
 
     async saveExpense() {
+        console.log('🔄 saveExpense() called at:', new Date().toISOString());
+        
+        if (this.isSaving) {
+            console.log('⚠️ Already saving, preventing duplicate save');
+            return;
+        }
+        
+        this.isSaving = true;
+        
         const form = document.getElementById('expense-form');
         if (!form.checkValidity()) {
             form.reportValidity();
+            this.isSaving = false;
             return;
         }
         
@@ -1629,6 +1638,8 @@ class ExpenseUI {
         } catch (error) {
             console.error('Error saving expense:', error);
             this.showToast('Error saving expense', 'error');
+        } finally {
+            this.isSaving = false; // Reset the flag in both success and error cases
         }
     }
 
