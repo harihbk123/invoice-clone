@@ -447,7 +447,7 @@ class ExpenseUI {
                             </svg>
                             Cancel
                         </button>
-                        <button type="submit" class="btn-modern btn-primary" onclick="saveExpense()">
+                        <button type="submit" class="btn-modern btn-primary" form="expense-form">
                             <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
                                 <path d="M12.736 3.97a.733.733 0 0 1 1.047 0c.286.289.29.756.01 1.05L7.88 12.01a.733.733 0 0 1-1.065.02L3.217 8.384a.757.757 0 0 1 0-1.06.733.733 0 0 1 1.047 0l3.052 3.093 5.4-6.425a.247.247 0 0 1 .02-.022Z"/>
                             </svg>
@@ -529,7 +529,7 @@ class ExpenseUI {
                             </svg>
                             Cancel
                         </button>
-                        <button type="submit" class="btn-modern btn-primary" onclick="window.expenseUI.saveNewCategory()">
+                        <button type="submit" class="btn-modern btn-primary" form="add-category-form">
                             <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
                                 <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
                             </svg>
@@ -546,6 +546,10 @@ class ExpenseUI {
         const expensesPage = document.getElementById('expenses-page');
         if (expensesPage) {
             expensesPage.innerHTML = this.getExpensesPageHTML();
+            
+            // Extract modals from the page and move them to document.body
+            this.moveModalsToBody();
+            
             this.attachEventListeners();
             
             // Ensure expense manager has data before rendering
@@ -560,6 +564,34 @@ class ExpenseUI {
                     this.renderExpenses();
                 }
             }
+        }
+    }
+
+    moveModalsToBody() {
+        console.log('Moving modals to body...');
+        
+        // Move expense modal to body if it exists in the page
+        const expenseModal = document.getElementById('expense-modal');
+        console.log('Expense modal found:', !!expenseModal);
+        if (expenseModal) {
+            console.log('Expense modal parent:', expenseModal.parentNode);
+            console.log('Expense modal innerHTML length:', expenseModal.innerHTML.length);
+            console.log('Modal footer exists:', !!expenseModal.querySelector('.modal-footer'));
+            console.log('Submit button exists:', !!expenseModal.querySelector('button[type="submit"]'));
+            
+            if (expenseModal.parentNode !== document.body) {
+                console.log('Moving expense modal to body...');
+                document.body.appendChild(expenseModal);
+                console.log('Expense modal moved. New parent:', expenseModal.parentNode);
+            }
+        }
+        
+        // Move add category modal to body if it exists in the page
+        const addCategoryModal = document.getElementById('add-category-modal');
+        console.log('Add category modal found:', !!addCategoryModal);
+        if (addCategoryModal && addCategoryModal.parentNode !== document.body) {
+            console.log('Moving add category modal to body...');
+            document.body.appendChild(addCategoryModal);
         }
     }
 
@@ -708,8 +740,6 @@ class ExpenseUI {
                     this.editExpense(expenseId);
                 } else if (actionBtn.classList.contains('delete')) {
                     this.deleteExpense(expenseId);
-                } else if (actionBtn.title === 'View Receipt') {
-                    this.viewReceipt(expenseId);
                 } else if (actionBtn.title === 'Duplicate') {
                     this.duplicateExpense(expenseId);
                 }
@@ -852,45 +882,6 @@ class ExpenseUI {
         document.getElementById('expense-modal').classList.remove('hidden');
     }
 
-    viewReceipt(expenseId) {
-        const expense = this.expenseManager.expenses.find(e => e.id === expenseId);
-        if (!expense) {
-            this.showToast('Expense not found', 'error');
-            return;
-        }
-        
-        if (!expense.receipt) {
-            this.showToast('No receipt attached to this expense', 'info');
-            return;
-        }
-        
-        // Create a modal to view the receipt
-        const receiptModal = document.createElement('div');
-        receiptModal.className = 'modal';
-        receiptModal.innerHTML = `
-            <div class="modal-content receipt-modal">
-                <div class="modal-header">
-                    <h3>Receipt - ${expense.description}</h3>
-                    <button class="modal-close" onclick="this.closest('.modal').remove()">×</button>
-                </div>
-                <div class="modal-body">
-                    <div class="receipt-details">
-                        <p><strong>Date:</strong> ${this.formatDate(expense.date)}</p>
-                        <p><strong>Amount:</strong> ₹${this.formatNumber(expense.amount)}</p>
-                        <p><strong>Category:</strong> ${expense.categoryName}</p>
-                        <p><strong>Vendor:</strong> ${expense.vendorName || 'N/A'}</p>
-                    </div>
-                    <div class="receipt-image">
-                        <img src="${expense.receipt}" alt="Receipt" style="max-width: 100%; height: auto; border-radius: 8px;">
-                    </div>
-                </div>
-            </div>
-        `;
-        
-        document.body.appendChild(receiptModal);
-        receiptModal.classList.remove('hidden');
-    }
-
     attachModalEventListeners() {
 
         // Save expense button
@@ -899,16 +890,28 @@ class ExpenseUI {
             saveExpenseBtn.addEventListener('click', () => this.saveExpense());
         }
 
-        // Form submission prevention
+        // Form submission handling
         const expenseForm = document.getElementById('expense-form');
         if (expenseForm) {
-            expenseForm.addEventListener('submit', (e) => e.preventDefault());
+            expenseForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                this.saveExpense();
+            });
         }
 
         // Add Category button
         const addCategoryBtn = document.getElementById('add-category-btn');
         if (addCategoryBtn) {
             addCategoryBtn.addEventListener('click', () => this.showAddCategoryModal());
+        }
+
+        // Add Category form submission
+        const addCategoryForm = document.getElementById('add-category-form');
+        if (addCategoryForm) {
+            addCategoryForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                this.saveNewCategory();
+            });
         }
 
         // Populate category dropdowns
@@ -941,26 +944,16 @@ class ExpenseUI {
     }
 
     showAddCategoryModal() {
-        const categoryName = prompt('Enter new category name:');
-        if (categoryName && categoryName.trim()) {
-            const categoryIcon = prompt('Enter category icon (emoji):') || '📦';
-            const categoryColor = prompt('Enter category color (hex code):') || '#6B7280';
-            
-            this.expenseManager.addCategory({
-                name: categoryName.trim(),
-                icon: categoryIcon,
-                color: categoryColor
-            });
-            
-            // Refresh dropdowns
-            this.populateCategoryDropdowns();
-            
-            // Select the new category in the expense modal
-            const expenseSelect = document.getElementById('expense-category');
-            if (expenseSelect) {
-                expenseSelect.value = categoryName.trim();
-            }
-        }
+        // Clear the form
+        document.getElementById('add-category-form').reset();
+        
+        // Remove any previous selections
+        document.querySelectorAll('.icon-option.selected, .color-option.selected').forEach(el => {
+            el.classList.remove('selected');
+        });
+        
+        // Show the modal
+        document.getElementById('add-category-modal').classList.remove('hidden');
     }
 
     renderExpenses() {
@@ -1103,7 +1096,6 @@ class ExpenseUI {
                 </td>
                 <td class="actions-column">
                     <button class="action-btn edit" data-expense-id="${expense.id}" title="Edit Expense">✏️</button>
-                    <button class="action-btn" data-expense-id="${expense.id}" title="View Receipt">👁️</button>
                     <button class="action-btn" data-expense-id="${expense.id}" title="Duplicate">📋</button>
                     <button class="action-btn delete" data-expense-id="${expense.id}" title="Delete">🗑️</button>
                 </td>
@@ -1409,7 +1401,22 @@ class ExpenseUI {
     }
 
     openAddExpenseModal() {
+        console.log('Opening add expense modal...');
         this.expenseManager.editingExpenseId = null;
+        
+        const modal = document.getElementById('expense-modal');
+        const form = document.getElementById('expense-form');
+        const submitBtn = document.querySelector('#expense-modal button[type="submit"]');
+        
+        console.log('Modal found:', !!modal);
+        console.log('Form found:', !!form);
+        console.log('Submit button found:', !!submitBtn);
+        
+        if (modal) {
+            console.log('Modal classes before:', modal.className);
+            console.log('Modal parent:', modal.parentNode?.tagName);
+        }
+        
         document.getElementById('expense-modal-title').textContent = 'Add New Expense';
         document.getElementById('expense-form').reset();
         document.getElementById('expense-date').value = new Date().toISOString().split('T')[0];
@@ -1419,6 +1426,7 @@ class ExpenseUI {
         this.populateCategoryDropdown();
         
         document.getElementById('expense-modal').classList.remove('hidden');
+        console.log('Modal should now be visible');
     }
 
     async populateCategoryDropdown() {
@@ -4140,7 +4148,6 @@ function cleanupExpenseFilters() {
 
 function renderDashboard() {
     console.log('Rendering enhanced dashboard...');
-    cleanupExpenseFilters();
     
     // Clear dynamic content with smooth transitions
     const dashboardPage = document.getElementById('dashboard-page');
@@ -4427,7 +4434,6 @@ function renderRecentInvoices() {
                 <td>
                     <div class="invoice-id-cell">
                         <div class="invoice-number">${invoice.id}</div>
-                        <div class="invoice-date">${formatDate(invoice.date)}</div>
                     </div>
                 </td>
                 <td>
@@ -4440,6 +4446,11 @@ function renderRecentInvoices() {
                     <div class="amount-cell">
                         <div class="amount-value">₹${formatNumber(invoice.amount)}</div>
                         <div class="amount-subtitle">${invoice.items?.length || 0} items</div>
+                    </div>
+                </td>
+                <td>
+                    <div class="date-cell">
+                        <div class="date-value">${formatDate(invoice.date)}</div>
                     </div>
                 </td>
                 <td>
