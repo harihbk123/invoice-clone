@@ -159,47 +159,43 @@ class ExpenseUI {
                         <span class="table-subtitle" id="results-count">18 expenses found</span>
                     </div>
                     
-                    <!-- Advanced Filters -->
-                    <div class="filters-section">
-                        <div class="search-filter">
-                            <div class="filter-group-label">Search</div>
+                    <!-- Revamped Filters UI -->
+                    <div class="filters-card" id="expenses-filters">
+                        <div class="filters-row">
                             <div class="search-input-wrapper">
                                 <svg class="search-icon" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
                                     <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>
                                 </svg>
-                                <input type="text" id="expense-search-input" class="search-input" placeholder="Search expenses...">
+                                <input type="text" id="expense-search-input" class="search-input" placeholder="Search description, category, vendor..." aria-label="Search expenses">
                             </div>
+                            <div class="chip-group" role="group" aria-label="Quick date range">
+                                <button class="chip" data-preset="today">Today</button>
+                                <button class="chip" data-preset="7d">7D</button>
+                                <button class="chip" data-preset="30d">30D</button>
+                                <button class="chip" data-preset="ytd">YTD</button>
+                                <button class="chip active" data-preset="all">All</button>
+                            </div>
+                            <label class="switch" title="Business only">
+                                <input type="checkbox" id="business-only" />
+                                <span>Business</span>
+                            </label>
                         </div>
-                        
-                        <div class="filter-controls">
-                            <div class="dropdown-filters">
-                                <div class="filter-group">
-                                    <div class="filter-group-label">Date Range</div>
-                                    <select id="date-filter" class="filter-select">
-                                        <option value="all">All Time</option>
-                                        <option value="today">Today</option>
-                                        <option value="week">This Week</option>
-                                        <option value="month">This Month</option>
-                                        <option value="quarter">This Quarter</option>
-                                        <option value="year">This Year</option>
-                                        <option value="custom">Custom Range</option>
-                                    </select>
-                                </div>
-                                
+                        <!-- Maintain a hidden date-filter input for logic compatibility -->
+                        <input type="hidden" id="date-filter" value="all" />
+
+                        <button class="filters-advanced-toggle" id="filters-advanced-toggle" aria-expanded="false">
+                            Advanced filters
+                            <span class="caret">▾</span>
+                        </button>
+
+                        <div class="filters-advanced" id="filters-advanced" hidden>
+                            <div class="advanced-grid">
                                 <div class="filter-group">
                                     <div class="filter-group-label">Category</div>
                                     <select id="category-filter" class="filter-select">
                                         <option value="all">All Categories</option>
-                                        <option value="travel">Travel</option>
-                                        <option value="office">Office Supplies</option>
-                                        <option value="marketing">Marketing</option>
-                                        <option value="food">Food & Dining</option>
-                                        <option value="utilities">Utilities</option>
-                                        <option value="professional">Professional Services</option>
-                                        <option value="miscellaneous">Miscellaneous</option>
                                     </select>
                                 </div>
-                                
                                 <div class="filter-group">
                                     <div class="filter-group-label">Payment Method</div>
                                     <select id="payment-filter" class="filter-select">
@@ -211,20 +207,14 @@ class ExpenseUI {
                                         <option value="wallet">Digital Wallet</option>
                                     </select>
                                 </div>
-                            </div>
-                            
-                            <div class="date-range-filters" id="date-range-filters">
                                 <div class="filter-group">
-                                    <div class="filter-group-label">From Date</div>
+                                    <div class="filter-group-label">From</div>
                                     <input type="date" id="from-date-filter" class="date-input">
                                 </div>
                                 <div class="filter-group">
-                                    <div class="filter-group-label">To Date</div>
+                                    <div class="filter-group-label">To</div>
                                     <input type="date" id="to-date-filter" class="date-input">
                                 </div>
-                            </div>
-                            
-                            <div class="amount-range-filters">
                                 <div class="filter-group">
                                     <div class="filter-group-label">Min Amount</div>
                                     <input type="number" id="min-amount" class="amount-input" placeholder="0">
@@ -234,15 +224,10 @@ class ExpenseUI {
                                     <input type="number" id="max-amount" class="amount-input" placeholder="∞">
                                 </div>
                             </div>
-                        </div>
-                        
-                        <div class="filter-actions">
-                            <button class="btn-filter-clear" id="clear-filters-btn">
-                                <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                                    <path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854Z"/>
-                                </svg>
-                                Clear All Filters
-                            </button>
+                            <div class="filter-actions">
+                                <button class="btn-modern btn-secondary" id="reset-filters-btn">Reset</button>
+                                <button class="btn-modern btn-primary" id="apply-filters-btn">Apply</button>
+                            </div>
                         </div>
                     </div>
                     
@@ -277,7 +262,7 @@ class ExpenseUI {
                                         <path d="M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z"/>
                                     </svg>
                                 </th>
-                                <th class="sortable" data-sort="category">
+                                <th class="sortable" data-sort="categoryName">
                                     <span>Category</span>
                                     <svg class="sort-icon" width="12" height="12" fill="currentColor" viewBox="0 0 16 16">
                                         <path d="M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z"/>
@@ -289,14 +274,8 @@ class ExpenseUI {
                                         <path d="M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z"/>
                                     </svg>
                                 </th>
-                                <th class="sortable" data-sort="payment">
+                                <th class="sortable" data-sort="paymentMethod">
                                     <span>Payment Method</span>
-                                    <svg class="sort-icon" width="12" height="12" fill="currentColor" viewBox="0 0 16 16">
-                                        <path d="M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z"/>
-                                    </svg>
-                                </th>
-                                <th class="sortable" data-sort="vendor">
-                                    <span>Vendor</span>
                                     <svg class="sort-icon" width="12" height="12" fill="currentColor" viewBox="0 0 16 16">
                                         <path d="M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z"/>
                                     </svg>
@@ -511,14 +490,14 @@ class ExpenseUI {
                                     <span class="label-required">*</span>
                                 </label>
                                 <div class="icon-grid">
-                                    <button type="button" class="icon-option" data-icon="📊" onclick="selectIcon('📊')">📊</button>
-                                    <button type="button" class="icon-option" data-icon="🏢" onclick="selectIcon('🏢')">🏢</button>
-                                    <button type="button" class="icon-option" data-icon="🚗" onclick="selectIcon('🚗')">🚗</button>
-                                    <button type="button" class="icon-option" data-icon="💡" onclick="selectIcon('💡')">💡</button>
-                                    <button type="button" class="icon-option" data-icon="📱" onclick="selectIcon('📱')">📱</button>
-                                    <button type="button" class="icon-option" data-icon="🎯" onclick="selectIcon('🎯')">🎯</button>
-                                    <button type="button" class="icon-option" data-icon="📚" onclick="selectIcon('📚')">📚</button>
-                                    <button type="button" class="icon-option" data-icon="🎨" onclick="selectIcon('🎨')">🎨</button>
+                                    <button type="button" class="icon-option" data-icon="📊" onclick="selectIcon('📊', event)">📊</button>
+                                    <button type="button" class="icon-option" data-icon="🏢" onclick="selectIcon('🏢', event)">🏢</button>
+                                    <button type="button" class="icon-option" data-icon="🚗" onclick="selectIcon('🚗', event)">🚗</button>
+                                    <button type="button" class="icon-option" data-icon="💡" onclick="selectIcon('💡', event)">💡</button>
+                                    <button type="button" class="icon-option" data-icon="📱" onclick="selectIcon('📱', event)">📱</button>
+                                    <button type="button" class="icon-option" data-icon="🎯" onclick="selectIcon('🎯', event)">🎯</button>
+                                    <button type="button" class="icon-option" data-icon="📚" onclick="selectIcon('📚', event)">📚</button>
+                                    <button type="button" class="icon-option" data-icon="🎨" onclick="selectIcon('🎨', event)">🎨</button>
                                 </div>
                                 <input type="hidden" id="new-category-icon" required>
                             </div>
@@ -529,14 +508,14 @@ class ExpenseUI {
                                     <span class="label-required">*</span>
                                 </label>
                                 <div class="color-grid">
-                                    <button type="button" class="color-option" data-color="#3B82F6" style="background-color: #3B82F6" onclick="selectColor('#3B82F6')"></button>
-                                    <button type="button" class="color-option" data-color="#10B981" style="background-color: #10B981" onclick="selectColor('#10B981')"></button>
-                                    <button type="button" class="color-option" data-color="#F59E0B" style="background-color: #F59E0B" onclick="selectColor('#F59E0B')"></button>
-                                    <button type="button" class="color-option" data-color="#EF4444" style="background-color: #EF4444" onclick="selectColor('#EF4444')"></button>
-                                    <button type="button" class="color-option" data-color="#8B5CF6" style="background-color: #8B5CF6" onclick="selectColor('#8B5CF6')"></button>
-                                    <button type="button" class="color-option" data-color="#F97316" style="background-color: #F97316" onclick="selectColor('#F97316')"></button>
-                                    <button type="button" class="color-option" data-color="#06B6D4" style="background-color: #06B6D4" onclick="selectColor('#06B6D4')"></button>
-                                    <button type="button" class="color-option" data-color="#84CC16" style="background-color: #84CC16" onclick="selectColor('#84CC16')"></button>
+                                    <button type="button" class="color-option" data-color="#3B82F6" style="background-color: #3B82F6" onclick="selectColor('#3B82F6', event)"></button>
+                                    <button type="button" class="color-option" data-color="#10B981" style="background-color: #10B981" onclick="selectColor('#10B981', event)"></button>
+                                    <button type="button" class="color-option" data-color="#F59E0B" style="background-color: #F59E0B" onclick="selectColor('#F59E0B', event)"></button>
+                                    <button type="button" class="color-option" data-color="#EF4444" style="background-color: #EF4444" onclick="selectColor('#EF4444', event)"></button>
+                                    <button type="button" class="color-option" data-color="#8B5CF6" style="background-color: #8B5CF6" onclick="selectColor('#8B5CF6', event)"></button>
+                                    <button type="button" class="color-option" data-color="#F97316" style="background-color: #F97316" onclick="selectColor('#F97316', event)"></button>
+                                    <button type="button" class="color-option" data-color="#06B6D4" style="background-color: #06B6D4" onclick="selectColor('#06B6D4', event)"></button>
+                                    <button type="button" class="color-option" data-color="#84CC16" style="background-color: #84CC16" onclick="selectColor('#84CC16', event)"></button>
                                 </div>
                                 <input type="hidden" id="new-category-color" required>
                             </div>
@@ -612,46 +591,75 @@ class ExpenseUI {
         const minAmountFilter = document.getElementById('min-amount');
         const maxAmountFilter = document.getElementById('max-amount');
 
-        if (dateFilter) {
-            dateFilter.addEventListener('change', (e) => {
-                const dateRangeFilters = document.getElementById('date-range-filters');
-                if (e.target.value === 'custom') {
-                    // Show date range inputs
-                    if (dateRangeFilters) {
-                        dateRangeFilters.classList.add('show');
-                    }
-                } else {
-                    // Hide date range inputs
-                    if (dateRangeFilters) {
-                        dateRangeFilters.classList.remove('show');
-                    }
+        // Quick chip filters (date presets)
+        const chipGroup = document.querySelector('#expenses-filters .chip-group');
+        if (chipGroup) {
+            chipGroup.addEventListener('click', (e) => {
+                const btn = e.target.closest('.chip');
+                if (!btn) return;
+                chipGroup.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+                btn.classList.add('active');
+                const preset = btn.dataset.preset;
+                const hiddenDate = document.getElementById('date-filter');
+                if (hiddenDate) {
+                    // Map presets to existing values
+                    const map = { today: 'today', '7d': 'week', '30d': 'month', ytd: 'year', all: 'all' };
+                    hiddenDate.value = map[preset] || 'all';
                 }
+                // Clear manual range when using chips
+                const from = document.getElementById('from-date-filter');
+                const to = document.getElementById('to-date-filter');
+                if (from) from.value = '';
+                if (to) to.value = '';
                 this.applyFilters();
             });
         }
-        if (categoryFilter) {
-            categoryFilter.addEventListener('change', () => this.applyFilters());
-        }
-        if (paymentFilter) {
-            paymentFilter.addEventListener('change', () => this.applyFilters());
-        }
-        if (fromDateFilter) {
-            fromDateFilter.addEventListener('change', () => this.applyFilters());
-        }
-        if (toDateFilter) {
-            toDateFilter.addEventListener('change', () => this.applyFilters());
-        }
-        if (minAmountFilter) {
-            minAmountFilter.addEventListener('input', () => this.applyFilters());
-        }
-        if (maxAmountFilter) {
-            maxAmountFilter.addEventListener('input', () => this.applyFilters());
+
+        // Advanced toggle
+        const advToggle = document.getElementById('filters-advanced-toggle');
+        const advPanel = document.getElementById('filters-advanced');
+        if (advToggle && advPanel) {
+            advToggle.addEventListener('click', () => {
+                const expanded = advToggle.getAttribute('aria-expanded') === 'true';
+                advToggle.setAttribute('aria-expanded', String(!expanded));
+                advPanel.hidden = expanded;
+                advToggle.querySelector('.caret')?.classList.toggle('open', !expanded);
+            });
         }
 
+        // Business-only toggle
+        const businessOnly = document.getElementById('business-only');
+        if (businessOnly) {
+            businessOnly.addEventListener('change', (e) => {
+                this.currentFilters.businessOnly = !!e.target.checked;
+                this.applyFilters();
+            });
+        }
+
+        // Hook up filters
+        if (dateFilter) {
+            dateFilter.addEventListener('change', (e) => {
+                const val = e.target.value;
+                // No separate show/hide container now; advanced holds date inputs
+                this.applyFilters();
+            });
+        }
+        if (categoryFilter) categoryFilter.addEventListener('change', () => this.applyFilters());
+        if (paymentFilter) paymentFilter.addEventListener('change', () => this.applyFilters());
+        if (fromDateFilter) fromDateFilter.addEventListener('change', () => this.applyFilters());
+        if (toDateFilter) toDateFilter.addEventListener('change', () => this.applyFilters());
+        if (minAmountFilter) minAmountFilter.addEventListener('input', () => this.applyFilters());
+        if (maxAmountFilter) maxAmountFilter.addEventListener('input', () => this.applyFilters());
+
+        
         // Clear filters button
         const clearFiltersBtn = document.getElementById('clear-filters-btn');
+        const resetFiltersBtn = document.getElementById('reset-filters-btn');
         if (clearFiltersBtn) {
             clearFiltersBtn.addEventListener('click', () => this.clearFilters());
+        }
+        if (resetFiltersBtn) {
+            resetFiltersBtn.addEventListener('click', () => this.clearFilters());
         }
 
         // Table sorting
@@ -669,17 +677,53 @@ class ExpenseUI {
             selectAllCheckbox.addEventListener('change', (e) => this.handleSelectAll(e.target.checked));
         }
 
+        // Row checkbox change updates bulk actions
+        const tableBody = document.getElementById('expenses-table-body');
+        if (tableBody) {
+            tableBody.addEventListener('change', (e) => {
+                const target = e.target;
+                if (target && target.classList.contains('table-checkbox')) {
+                    this.updateBulkActions();
+                }
+            });
+        }
+
+        // Bulk delete
+        const bulkDeleteBtn = document.getElementById('bulk-delete-btn');
+        if (bulkDeleteBtn) {
+            bulkDeleteBtn.addEventListener('click', () => this.handleBulkDelete());
+        }
+
+        // Delegated action buttons
+        const expensesTable = document.querySelector('.enhanced-table');
+        if (expensesTable) {
+            expensesTable.addEventListener('click', (e) => {
+                const actionBtn = e.target.closest('.action-btn');
+                if (!actionBtn) return;
+                
+                const expenseId = actionBtn.getAttribute('data-expense-id');
+                if (!expenseId) return;
+                
+                if (actionBtn.classList.contains('edit')) {
+                    this.editExpense(expenseId);
+                } else if (actionBtn.classList.contains('delete')) {
+                    this.deleteExpense(expenseId);
+                } else if (actionBtn.title === 'View Receipt') {
+                    this.viewReceipt(expenseId);
+                } else if (actionBtn.title === 'Duplicate') {
+                    this.duplicateExpense(expenseId);
+                }
+            });
+        }
+
+        // Advanced apply/reset
+        const applyBtn = document.getElementById('apply-filters-btn');
+        if (applyBtn) applyBtn.addEventListener('click', () => this.applyFilters());
+        const resetBtn = document.getElementById('reset-filters-btn');
+        if (resetBtn) resetBtn.addEventListener('click', () => this.clearFilters());
+
         // Modal functionality
         this.attachModalEventListeners();
-
-        // Close dropdown menus when clicking outside
-        document.addEventListener('click', (e) => {
-            if (!e.target.closest('.action-dropdown')) {
-                document.querySelectorAll('.action-menu').forEach(menu => {
-                    menu.style.display = 'none';
-                });
-            }
-        });
     }
 
     handleSearch(searchTerm) {
@@ -702,108 +746,21 @@ class ExpenseUI {
 
     updateSortIndicators() {
         // Reset all headers
-        document.querySelectorAll('.modern-table th').forEach(th => {
+        document.querySelectorAll('.enhanced-table th').forEach(th => {
             th.classList.remove('sort-asc', 'sort-desc');
         });
         
         // Add sort class to current header
-        const currentHeader = document.querySelector(`[data-sort="${this.currentSort.field}"]`);
+        const currentHeader = document.querySelector(`.enhanced-table th[data-sort="${this.currentSort.field}"]`);
         if (currentHeader) {
             currentHeader.classList.add(this.currentSort.direction === 'asc' ? 'sort-asc' : 'sort-desc');
         }
     }
 
     renderFilteredExpenses() {
-        let filteredExpenses = [...this.expenseManager.expenses];
+        let filteredExpenses = this.getFilteredExpenses();
 
-        // Apply search filter
-        if (this.currentFilters.search) {
-            filteredExpenses = filteredExpenses.filter(expense =>
-                expense.description.toLowerCase().includes(this.currentFilters.search) ||
-                expense.categoryName.toLowerCase().includes(this.currentFilters.search) ||
-                expense.vendorName.toLowerCase().includes(this.currentFilters.search)
-            );
-        }
-
-        // Apply date range filter
-        if (this.currentFilters.dateRange === 'custom' && (this.currentFilters.fromDate || this.currentFilters.toDate)) {
-            filteredExpenses = filteredExpenses.filter(expense => {
-                const expenseDate = new Date(expense.date);
-                let isValid = true;
-                
-                if (this.currentFilters.fromDate) {
-                    isValid = isValid && expenseDate >= new Date(this.currentFilters.fromDate);
-                }
-                if (this.currentFilters.toDate) {
-                    isValid = isValid && expenseDate <= new Date(this.currentFilters.toDate);
-                }
-                
-                return isValid;
-            });
-        } else if (this.currentFilters.dateRange !== 'all') {
-            // Apply predefined date filter
-            const now = new Date();
-            const filterDate = new Date();
-            
-            switch (this.currentFilters.dateRange) {
-                case 'today':
-                    filterDate.setHours(0, 0, 0, 0);
-                    filteredExpenses = filteredExpenses.filter(expense => {
-                        const expenseDate = new Date(expense.date);
-                        expenseDate.setHours(0, 0, 0, 0);
-                        return expenseDate.getTime() === filterDate.getTime();
-                    });
-                    break;
-                case 'week':
-                    filterDate.setDate(now.getDate() - 7);
-                    filteredExpenses = filteredExpenses.filter(expense =>
-                        new Date(expense.date) >= filterDate
-                    );
-                    break;
-                case 'month':
-                    filterDate.setMonth(now.getMonth() - 1);
-                    filteredExpenses = filteredExpenses.filter(expense =>
-                        new Date(expense.date) >= filterDate
-                    );
-                    break;
-                case 'quarter':
-                    filterDate.setMonth(now.getMonth() - 3);
-                    filteredExpenses = filteredExpenses.filter(expense =>
-                        new Date(expense.date) >= filterDate
-                    );
-                    break;
-                case 'year':
-                    filterDate.setFullYear(now.getFullYear() - 1);
-                    filteredExpenses = filteredExpenses.filter(expense =>
-                        new Date(expense.date) >= filterDate
-                    );
-                    break;
-            }
-        }
-
-        // Apply amount range filter
-        if (this.currentFilters.minAmount > 0 || this.currentFilters.maxAmount < Infinity) {
-            filteredExpenses = filteredExpenses.filter(expense => {
-                const amount = parseFloat(expense.amount);
-                return amount >= this.currentFilters.minAmount && amount <= this.currentFilters.maxAmount;
-            });
-        }
-
-        // Apply category filter
-        if (this.currentFilters.category !== 'all') {
-            filteredExpenses = filteredExpenses.filter(expense =>
-                expense.categoryName === this.currentFilters.category
-            );
-        }
-
-        // Apply payment method filter
-        if (this.currentFilters.paymentMethod !== 'all') {
-            filteredExpenses = filteredExpenses.filter(expense =>
-                expense.paymentMethod === this.currentFilters.paymentMethod
-            );
-        }
-
-        // Apply sorting
+        // Apply sorting per currentSort
         filteredExpenses.sort((a, b) => {
             let aValue = a[this.currentSort.field];
             let bValue = b[this.currentSort.field];
@@ -815,8 +772,8 @@ class ExpenseUI {
                 aValue = new Date(aValue);
                 bValue = new Date(bValue);
             } else {
-                aValue = aValue.toString().toLowerCase();
-                bValue = bValue.toString().toLowerCase();
+                aValue = (aValue ?? '').toString().toLowerCase();
+                bValue = (bValue ?? '').toString().toLowerCase();
             }
 
             if (aValue < bValue) return this.currentSort.direction === 'asc' ? -1 : 1;
@@ -828,33 +785,7 @@ class ExpenseUI {
         this.updateResultsCount(filteredExpenses.length);
     }
 
-    clearFilters() {
-        // Reset all filter values
-        const dateFilter = document.getElementById('date-filter');
-        const categoryFilter = document.getElementById('category-filter');
-        const paymentFilter = document.getElementById('payment-filter');
-        const minAmount = document.getElementById('min-amount');
-        const maxAmount = document.getElementById('max-amount');
-        const searchInput = document.getElementById('expense-search-input');
-
-        if (dateFilter) dateFilter.value = 'all';
-        if (categoryFilter) categoryFilter.value = 'all';
-        if (paymentFilter) paymentFilter.value = 'all';
-        if (minAmount) minAmount.value = '';
-        if (maxAmount) maxAmount.value = '';
-        if (searchInput) searchInput.value = '';
-
-        // Reset filter state
-        this.currentFilters = {
-            search: '',
-            dateRange: 'all',
-            category: 'all',
-            paymentMethod: 'all',
-            businessOnly: false
-        };
-
-        this.renderFilteredExpenses();
-    }
+    
 
     handleSelectAll(checked) {
         const checkboxes = document.querySelectorAll('.table-checkbox[data-expense-id]');
@@ -866,10 +797,9 @@ class ExpenseUI {
 
     updateBulkActions() {
         const checkedBoxes = document.querySelectorAll('.table-checkbox[data-expense-id]:checked');
-        const bulkDeleteBtn = document.getElementById('bulk-delete-btn');
-        
-        if (bulkDeleteBtn) {
-            bulkDeleteBtn.style.display = checkedBoxes.length > 0 ? 'inline-flex' : 'none';
+        const bulkActions = document.getElementById('bulk-actions');
+        if (bulkActions) {
+            bulkActions.style.display = checkedBoxes.length > 0 ? 'flex' : 'none';
         }
     }
 
@@ -895,13 +825,6 @@ class ExpenseUI {
     renderExpenseTable(expenses) {
         // This method calls the existing renderExpensesTable
         this.renderExpensesTable(expenses);
-    }
-
-    updateResultsCount(count) {
-        const resultsCountElement = document.getElementById('expense-results-count');
-        if (resultsCountElement) {
-            resultsCountElement.textContent = `${count} expense${count !== 1 ? 's' : ''}`;
-        }
     }
 
     duplicateExpense(expenseId) {
@@ -998,14 +921,13 @@ class ExpenseUI {
         const categories = this.expenseManager.categories;
 
         // Populate filter dropdown
-        const filterSelect = document.getElementById('filter-category');
+        const filterSelect = document.getElementById('category-filter');
         if (filterSelect) {
-            // Keep "All Categories" option and add dynamic categories
-            const existingOptions = filterSelect.innerHTML;
+            // Reset and keep "All Categories"
             const categoryOptions = categories.map(cat => 
                 `<option value="${cat.name}">${cat.icon} ${cat.name}</option>`
             ).join('');
-            filterSelect.innerHTML = existingOptions.split('</option>')[0] + '</option>' + categoryOptions;
+            filterSelect.innerHTML = '<option value="all">All Categories</option>' + categoryOptions;
         }
 
         // Populate expense modal dropdown
@@ -1092,27 +1014,51 @@ class ExpenseUI {
 
     getFilteredExpenses() {
         let expenses = [...(this.expenseManager?.expenses || [])];
-        
+
+        // Search
+        if (this.currentFilters.search) {
+            const s = this.currentFilters.search;
+            expenses = expenses.filter(e =>
+                (e.description || '').toLowerCase().includes(s) ||
+                (e.categoryName || '').toLowerCase().includes(s) ||
+                (e.vendorName || '').toLowerCase().includes(s)
+            );
+        }
+
+        // Date range
+        if (this.currentFilters.fromDate) {
+            const from = new Date(this.currentFilters.fromDate);
+            expenses = expenses.filter(e => new Date(e.date) >= from);
+        }
+        if (this.currentFilters.toDate) {
+            const to = new Date(this.currentFilters.toDate);
+            expenses = expenses.filter(e => new Date(e.date) <= to);
+        }
+
+        // Category
         if (this.currentFilters.category !== 'all') {
-            expenses = expenses.filter(e => e.categoryName === this.currentFilters.category);
+            expenses = expenses.filter(e => (e.categoryName || '').toLowerCase() === this.currentFilters.category.toLowerCase());
         }
-        
-        if (this.currentFilters.dateFrom) {
-            expenses = expenses.filter(e => e.date >= this.currentFilters.dateFrom);
-        }
-        
-        if (this.currentFilters.dateTo) {
-            expenses = expenses.filter(e => e.date <= this.currentFilters.dateTo);
-        }
-        
+
+        // Payment method
         if (this.currentFilters.paymentMethod !== 'all') {
-            expenses = expenses.filter(e => e.paymentMethod === this.currentFilters.paymentMethod);
+            expenses = expenses.filter(e => (e.paymentMethod || '') === this.currentFilters.paymentMethod);
         }
-        
+
+        // Amount range
+        const minAmt = this.currentFilters.minAmount ?? 0;
+        const maxAmt = this.currentFilters.maxAmount ?? Infinity;
+        expenses = expenses.filter(e => {
+            const amt = Number(e.amount) || 0;
+            return amt >= minAmt && amt <= maxAmt;
+        });
+
+        // Business only
         if (this.currentFilters.businessOnly) {
-            expenses = expenses.filter(e => e.isBusinessExpense);
+            expenses = expenses.filter(e => !!e.isBusinessExpense);
         }
-        
+
+        // Sort by date desc by default
         return expenses.sort((a, b) => new Date(b.date) - new Date(a.date));
     }
 
@@ -1155,46 +1101,11 @@ class ExpenseUI {
                 <td>
                     ${this.getPaymentMethodTag(expense.paymentMethod)}
                 </td>
-                <td style="color: var(--text-secondary); font-weight: 500;">
-                    ${expense.vendorName || '<span style="color: var(--text-muted); font-style: italic;">No vendor</span>'}
-                </td>
                 <td class="actions-column">
-                    <div class="action-dropdown">
-                        <button class="action-trigger" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'block' ? 'none' : 'block'">
-                            <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                                <path d="M3 9.5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm5 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm5 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3z"/>
-                            </svg>
-                        </button>
-                        <div class="action-menu" style="display: none;">
-                            <button class="action-item action-edit" onclick="window.expenseUI.editExpense('${expense.id}'); this.parentElement.style.display = 'none';">
-                                <svg width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
-                                    <path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708L10.5 8.207l-3-3L12.146.146zM11.207 9l-3-3L2.5 11.707V14.5a.5.5 0 0 0 .5.5h2.793L11.207 9z"/>
-                                </svg>
-                                Edit Expense
-                            </button>
-                            <button class="action-item action-duplicate" onclick="window.expenseUI.duplicateExpense('${expense.id}'); this.parentElement.style.display = 'none';">
-                                <svg width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
-                                    <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/>
-                                    <path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/>
-                                </svg>
-                                Duplicate
-                            </button>
-                            <button class="action-item action-receipt" onclick="window.expenseUI.viewReceipt('${expense.id}'); this.parentElement.style.display = 'none';">
-                                <svg width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
-                                    <path d="M14 1H2a1 1 0 0 0-1 1v11.586l2-2L5 13.586l2-2 2 2L11 11.586l2 2V2a1 1 0 0 0-1-1zM2 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H2z"/>
-                                    <path d="M3 4.5a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5zM3 6a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9A.5.5 0 0 1 3 6zm0 1.5a.5.5 0 0 1 .5-.5h6a.5.5 0 0 1 0 1h-6a.5.5 0 0 1-.5-.5z"/>
-                                </svg>
-                                View Receipt
-                            </button>
-                            <div class="action-divider"></div>
-                            <button class="action-item action-delete" onclick="window.expenseUI.deleteExpense('${expense.id}'); this.parentElement.style.display = 'none';">
-                                <svg width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
-                                    <path d="M6.5 1h3a.5.5 0 0 1 .5.5v1H6v-1a.5.5 0 0 1 .5-.5ZM11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3A1.5 1.5 0 0 0 5 1.5v1H2.506a.58.58 0 0 0-.01 0H1.5a.5.5 0 0 0 0 1h.538l.853 10.66A2 2 0 0 0 4.885 16h6.23a2 2 0 0 0 1.994-1.84l.853-10.66h.538a.5.5 0 0 0 0-1h-.995a.59.59 0 0 0-.01 0H11Zm1.958 1-.846 10.58a1 1 0 0 1-.997.92h-6.23a1 1 0 0 1-.997-.92L3.042 3.5h9.916Zm-7.487 1a.5.5 0 0 1 .528.47l.5 8.5a.5.5 0 0 1-.998.06L5 5.03a.5.5 0 0 1 .47-.53Zm5.058 0a.5.5 0 0 1 .47.53l-.5 8.5a.5.5 0 1 1-.998-.06l.5-8.5a.5.5 0 0 1 .528-.47ZM8 4.5a.5.5 0 0 1 .5.5v8.5a.5.5 0 0 1-1 0V5a.5.5 0 0 1 .5-.5Z"/>
-                                </svg>
-                                Delete
-                            </button>
-                        </div>
-                    </div>
+                    <button class="action-btn edit" data-expense-id="${expense.id}" title="Edit Expense">✏️</button>
+                    <button class="action-btn" data-expense-id="${expense.id}" title="View Receipt">👁️</button>
+                    <button class="action-btn" data-expense-id="${expense.id}" title="Duplicate">📋</button>
+                    <button class="action-btn delete" data-expense-id="${expense.id}" title="Delete">🗑️</button>
                 </td>
             </tr>
         `).join('');
@@ -1404,6 +1315,43 @@ class ExpenseUI {
         this.currentFilters.toDate = toDateFilter ? toDateFilter.value : '';
         this.currentFilters.minAmount = minAmountFilter ? parseFloat(minAmountFilter.value) || 0 : 0;
         this.currentFilters.maxAmount = maxAmountFilter ? parseFloat(maxAmountFilter.value) || Infinity : Infinity;
+
+        // If using date presets (chips), compute from/to when not custom
+        const range = this.currentFilters.dateRange;
+        if (range && range !== 'custom') {
+            const today = new Date();
+            const end = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59, 999);
+            let start = null;
+            if (range === 'today') {
+                start = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0, 0);
+            } else if (range === 'week') {
+                const d = new Date(today);
+                d.setDate(d.getDate() - 6);
+                start = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 0, 0, 0, 0);
+            } else if (range === 'month') {
+                start = new Date(today.getFullYear(), today.getMonth(), 1, 0, 0, 0, 0);
+            } else if (range === 'quarter') {
+                const qStartMonth = Math.floor(today.getMonth() / 3) * 3;
+                start = new Date(today.getFullYear(), qStartMonth, 1, 0, 0, 0, 0);
+            } else if (range === 'year') {
+                start = new Date(today.getFullYear(), 0, 1, 0, 0, 0, 0);
+            } else if (range === 'all') {
+                start = null;
+            }
+            // Only set from/to if not using custom inputs
+            if (range === 'all') {
+                this.currentFilters.fromDate = '';
+                this.currentFilters.toDate = '';
+                if (fromDateFilter) fromDateFilter.value = '';
+                if (toDateFilter) toDateFilter.value = '';
+            } else if (start) {
+                const toISODate = (d) => d.toISOString().slice(0, 10);
+                this.currentFilters.fromDate = toISODate(start);
+                this.currentFilters.toDate = toISODate(end);
+                if (fromDateFilter) fromDateFilter.value = this.currentFilters.fromDate;
+                if (toDateFilter) toDateFilter.value = this.currentFilters.toDate;
+            }
+        }
         
         this.renderFilteredExpenses();
     }
@@ -1418,6 +1366,10 @@ class ExpenseUI {
         const minAmount = document.getElementById('min-amount');
         const maxAmount = document.getElementById('max-amount');
         const searchInput = document.getElementById('expense-search-input');
+        const chipGroup = document.querySelector('#expenses-filters .chip-group');
+        const businessOnly = document.getElementById('business-only');
+        const advToggle = document.getElementById('filters-advanced-toggle');
+        const advPanel = document.getElementById('filters-advanced');
 
         if (dateFilter) dateFilter.value = 'all';
         if (categoryFilter) categoryFilter.value = 'all';
@@ -1427,11 +1379,16 @@ class ExpenseUI {
         if (minAmount) minAmount.value = '';
         if (maxAmount) maxAmount.value = '';
         if (searchInput) searchInput.value = '';
-
-        // Hide date range inputs
-        const dateRangeFilters = document.querySelector('.date-range-filters');
-        if (dateRangeFilters) {
-            dateRangeFilters.style.display = 'none';
+        if (chipGroup) {
+            chipGroup.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+            const all = chipGroup.querySelector('[data-preset="all"]');
+            if (all) all.classList.add('active');
+        }
+        if (businessOnly) businessOnly.checked = false;
+        if (advToggle && advPanel) {
+            advToggle.setAttribute('aria-expanded', 'false');
+            advPanel.hidden = true;
+            advToggle.querySelector('.caret')?.classList.remove('open');
         }
 
         // Reset filter state
@@ -2615,23 +2572,23 @@ async function initializeApp() {
             };
             
             // Icon and color selection for add category modal
-            window.selectIcon = function(icon) {
+            window.selectIcon = function(icon, event) {
                 // Remove previous selection
                 document.querySelectorAll('.icon-option.selected').forEach(el => el.classList.remove('selected'));
                 
                 // Add selection to clicked element
-                event.target.classList.add('selected');
+                if (event && event.target) { event.target.classList.add('selected'); }
                 
                 // Set the hidden input value
                 document.getElementById('new-category-icon').value = icon;
             };
             
-            window.selectColor = function(color) {
+            window.selectColor = function(color, event) {
                 // Remove previous selection
                 document.querySelectorAll('.color-option.selected').forEach(el => el.classList.remove('selected'));
                 
                 // Add selection to clicked element
-                event.target.classList.add('selected');
+                if (event && event.target) { event.target.classList.add('selected'); }
                 
                 // Set the hidden input value
                 document.getElementById('new-category-color').value = color;
