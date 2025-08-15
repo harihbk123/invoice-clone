@@ -1,3 +1,16 @@
+// Shared stats calculation for dashboard/analytics
+function getStats(invoices, clients, monthlyEarnings) {
+    const totalEarnings = invoices.filter(inv => inv.status === 'Paid').reduce((sum, inv) => sum + inv.amount, 0);
+    const totalInvoices = invoices.length;
+    const totalClients = clients.length;
+    const avgInvoice = invoices.filter(inv => inv.status === 'Paid').length > 0
+        ? totalEarnings / invoices.filter(inv => inv.status === 'Paid').length
+        : 0;
+    const avgMonthly = monthlyEarnings.length > 0
+        ? monthlyEarnings.reduce((sum, m) => sum + m.amount, 0) / monthlyEarnings.length
+        : 0;
+    return { totalEarnings, totalInvoices, totalClients, avgInvoice, avgMonthly };
+}
 // Renders the clients grid (used by search, filters, etc.)
 function renderClientsGrid() {
     // This function should re-render the clients grid using appData.clients
@@ -6711,105 +6724,88 @@ function getAnalyticsPageHTML() {
             </div>
         </div>
         
-        <!-- Key Metrics -->
-        <div class="analytics-metrics-grid">
-            <div class="analytics-metric-card">
-                <div class="metric-icon">💰</div>
-                <div class="metric-content">
-                    <div class="metric-value" id="total-revenue-value">₹0</div>
-                    <div class="metric-label">Total Revenue</div>
-                    <div class="metric-change positive" id="revenue-change">+12.5%</div>
-                </div>
-            </div>
-            <div class="analytics-metric-card">
-                <div class="metric-icon">📄</div>
-                <div class="metric-content">
-                    <div class="metric-value" id="total-invoices-value">0</div>
-                    <div class="metric-label">Total Invoices</div>
-                    <div class="metric-change positive" id="invoices-change">+8.3%</div>
-                </div>
-            </div>
-            <div class="analytics-metric-card">
-                <div class="metric-icon">👥</div>
-                <div class="metric-content">
-                    <div class="metric-value" id="active-clients-value">0</div>
-                    <div class="metric-label">Active Clients</div>
-                    <div class="metric-change positive" id="clients-change">+2 new</div>
-                </div>
-            </div>
-            <div class="analytics-metric-card">
-                <div class="metric-icon">📊</div>
-                <div class="metric-content">
-                    <div class="metric-value" id="avg-invoice-value">₹0</div>
-                    <div class="metric-label">Average Invoice</div>
-                    <div class="metric-change negative" id="avg-change">-3.2%</div>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Filters and Controls -->
+        <!-- Filters and Controls (Reusing Expenses Filter Design) -->
         <div class="analytics-filters-section">
-            <div class="filters-container">
-                <div class="filters-header">
-                    <h3 class="filters-title">� Analytics Filters</h3>
-                    <div class="filters-actions">
-                        <button class="btn btn--sm btn--secondary" id="clear-analytics-filters">Clear All</button>
-                    </div>
-                </div>
-                
-                <div class="filters-grid">
-                    <div class="filter-group">
-                        <label class="filter-label">Time Period</label>
-                        <select class="filter-select" id="analytics-period">
-                            <option value="monthly">Monthly</option>
-                            <option value="quarterly">Quarterly</option>
-                            <option value="yearly">Yearly</option>
-                        </select>
+            <div class="enhanced-table-container">
+                <div class="table-header">
+                    <div class="table-title-section">
+                        <h3 class="table-title">📊 Analytics Filters</h3>
+                        <span class="table-subtitle" id="analytics-results-count">Analyzing all data</span>
                     </div>
                     
-                    <div class="filter-group">
-                        <label class="filter-label">Date Range</label>
-                        <select class="filter-select" id="analytics-date-range">
-                            <option value="last_6_months">Last 6 Months</option>
-                            <option value="last_12_months">Last 12 Months</option>
-                            <option value="current_year">Current Year</option>
-                            <option value="last_year">Last Year</option>
-                            <option value="custom">Custom Range</option>
-                        </select>
-                    </div>
-                    
-                    <div class="filter-group">
-                        <label class="filter-label">Client Filter</label>
-                        <select class="filter-select" id="analytics-client-filter">
-                            <option value="all">All Clients</option>
-                        </select>
-                    </div>
-                    
-                    <div class="filter-group">
-                        <label class="filter-label">Status Filter</label>
-                        <select class="filter-select" id="analytics-status-filter">
-                            <option value="all">All Status</option>
-                            <option value="paid">Paid Only</option>
-                            <option value="pending">Pending Only</option>
-                            <option value="overdue">Overdue Only</option>
-                        </select>
-                    </div>
-                    
-                    <div class="filter-group">
-                        <button class="btn btn--primary btn--sm" id="apply-analytics-filters">Apply Filters</button>
-                    </div>
-                </div>
-                
-                <!-- Custom Date Range (hidden by default) -->
-                <div class="custom-date-range hidden" id="custom-date-range">
-                    <div class="date-range-inputs">
-                        <div class="filter-group">
-                            <label class="filter-label">From Date</label>
-                            <input type="date" class="filter-input" id="analytics-date-from">
+                    <!-- Reused Filters UI from Expenses -->
+                    <div class="filters-card" id="analytics-filters">
+                        <div class="filters-row">
+                            <div class="search-input-wrapper">
+                                <svg class="search-icon" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                    <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>
+                                </svg>
+                                <input type="text" id="analytics-search-input" class="search-input" placeholder="Search clients, invoices..." aria-label="Search analytics data">
+                            </div>
+                            <div class="chip-group" role="group" aria-label="Quick date range">
+                                <button class="chip" data-preset="today">Today</button>
+                                <button class="chip" data-preset="7d">7D</button>
+                                <button class="chip" data-preset="30d">30D</button>
+                                <button class="chip" data-preset="ytd">YTD</button>
+                                <button class="chip active" data-preset="all">All</button>
+                            </div>
+                            <label class="switch" title="Paid invoices only">
+                                <input type="checkbox" id="paid-only" />
+                                <span>Paid Only</span>
+                            </label>
                         </div>
-                        <div class="filter-group">
-                            <label class="filter-label">To Date</label>
-                            <input type="date" class="filter-input" id="analytics-date-to">
+                        <!-- Hidden inputs for compatibility -->
+                        <input type="hidden" id="analytics-date-filter" value="all" />
+
+                        <button class="filters-advanced-toggle" id="analytics-filters-advanced-toggle" aria-expanded="false">
+                            Advanced filters
+                            <svg class="chevron" width="12" height="12" fill="currentColor" viewBox="0 0 16 16">
+                                <path fill-rule="evenodd" d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z"/>
+                            </svg>
+                        </button>
+
+                        <!-- Advanced filters panel (hidden by default) -->
+                        <div class="filters-advanced-panel" id="analytics-filters-advanced-panel" style="display: none;">
+                            <div class="filters-grid">
+                                <div class="filter-group">
+                                    <label class="filter-label">Time Period</label>
+                                    <select class="filter-select" id="analytics-period">
+                                        <option value="monthly">Monthly</option>
+                                        <option value="quarterly">Quarterly</option>
+                                        <option value="yearly">Yearly</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="filter-group">
+                                    <label class="filter-label">Client Filter</label>
+                                    <select class="filter-select" id="analytics-client-filter">
+                                        <option value="all">All Clients</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="filter-group">
+                                    <label class="filter-label">Status Filter</label>
+                                    <select class="filter-select" id="analytics-status-filter">
+                                        <option value="all">All Status</option>
+                                        <option value="paid">Paid Only</option>
+                                        <option value="pending">Pending Only</option>
+                                        <option value="overdue">Overdue Only</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="filter-group">
+                                    <label class="filter-label">Custom Date Range</label>
+                                    <div class="date-inputs">
+                                        <input type="date" class="filter-input" id="analytics-date-from" placeholder="From">
+                                        <input type="date" class="filter-input" id="analytics-date-to" placeholder="To">
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="filters-actions">
+                                <button class="btn btn--sm btn--secondary" id="clear-analytics-filters">Clear All</button>
+                                <button class="btn btn--sm btn--primary" id="apply-analytics-filters">Apply Filters</button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -6923,18 +6919,29 @@ function initializeAnalyticsEventListeners() {
         });
     }
     
-    // Date range change
-    const dateRangeSelect = document.getElementById('analytics-date-range');
-    if (dateRangeSelect) {
-        dateRangeSelect.addEventListener('change', (e) => {
-            const customRange = document.getElementById('custom-date-range');
-            if (e.target.value === 'custom') {
-                customRange.classList.remove('hidden');
-            } else {
-                customRange.classList.add('hidden');
-            }
+    // Advanced filters toggle
+    const advancedToggle = document.getElementById('analytics-filters-advanced-toggle');
+    const advancedPanel = document.getElementById('analytics-filters-advanced-panel');
+    if (advancedToggle && advancedPanel) {
+        advancedToggle.addEventListener('click', () => {
+            const isExpanded = advancedToggle.getAttribute('aria-expanded') === 'true';
+            advancedToggle.setAttribute('aria-expanded', !isExpanded);
+            advancedPanel.style.display = isExpanded ? 'none' : 'block';
+            advancedToggle.classList.toggle('expanded', !isExpanded);
         });
     }
+    
+    // Quick filter chips
+    const chips = document.querySelectorAll('#analytics-filters .chip');
+    chips.forEach(chip => {
+        chip.addEventListener('click', (e) => {
+            chips.forEach(c => c.classList.remove('active'));
+            e.target.classList.add('active');
+            const preset = e.target.dataset.preset;
+            document.getElementById('analytics-date-filter').value = preset;
+            applyAnalyticsFilters();
+        });
+    });
     
     // Apply filters
     const applyFiltersBtn = document.getElementById('apply-analytics-filters');
@@ -6946,6 +6953,14 @@ function initializeAnalyticsEventListeners() {
     const clearFiltersBtn = document.getElementById('clear-analytics-filters');
     if (clearFiltersBtn) {
         clearFiltersBtn.addEventListener('click', () => clearAnalyticsFilters());
+    }
+    
+    // Search input (no notifications for search)
+    const searchInput = document.getElementById('analytics-search-input');
+    if (searchInput) {
+        searchInput.addEventListener('input', debounce(() => {
+            applyAnalyticsFilters(false); // false = no notification
+        }, 300));
     }
     
     // Populate client filter
@@ -6960,15 +6975,7 @@ function renderAnalyticsData() {
         
         console.log('📊 Data available:', { invoices: invoices.length, clients: clients.length });
         
-        // Update metrics
-        try {
-            updateAnalyticsMetrics(invoices, clients);
-            console.log('✅ Metrics updated');
-        } catch (error) {
-            console.error('❌ Error updating metrics:', error);
-        }
-        
-        // Render charts
+        // Update charts
         try {
             renderAnalyticsChart('monthly');
             console.log('✅ Main chart rendered');
@@ -7013,20 +7020,46 @@ function renderAnalyticsData() {
 }
 
 function updateAnalyticsMetrics(invoices, clients) {
-    const totalRevenue = invoices.reduce((sum, inv) => sum + (inv.amount || 0), 0);
-    const totalInvoices = invoices.length;
-    const activeClients = clients.filter(c => 
-        invoices.some(inv => inv.clientId === c.id)
-    ).length;
-    const avgInvoice = totalInvoices > 0 ? totalRevenue / totalInvoices : 0;
+    console.log('🔬 updateAnalyticsMetrics called with:', { 
+        invoicesCount: invoices.length, 
+        clientsCount: clients.length,
+        invoices: invoices.slice(0, 3), // first 3 for debugging
+        appDataMonthlyEarnings: appData.monthlyEarnings
+    });
     
-    document.getElementById('total-revenue-value').textContent = `₹${formatNumber(totalRevenue)}`;
-    document.getElementById('total-invoices-value').textContent = totalInvoices;
-    document.getElementById('active-clients-value').textContent = activeClients;
-    document.getElementById('avg-invoice-value').textContent = `₹${formatNumber(avgInvoice)}`;
+    // Get values directly from dashboard metric cards if they exist
+    const dashboardRevenue = document.querySelector('#dashboard-page .metric-card:nth-child(1) .metric-value');
+    const dashboardClients = document.querySelector('#dashboard-page .metric-card:nth-child(2) .metric-value');
+    const dashboardInvoices = document.querySelector('#dashboard-page .metric-card:nth-child(3) .metric-value');
+    const dashboardAverage = document.querySelector('#dashboard-page .metric-card:nth-child(4) .metric-value');
+    
+    if (dashboardRevenue && dashboardClients && dashboardInvoices && dashboardAverage) {
+        // Use dashboard values directly
+        console.log('🔬 Using dashboard values:', {
+            revenue: dashboardRevenue.textContent,
+            clients: dashboardClients.textContent,
+            invoices: dashboardInvoices.textContent,
+            average: dashboardAverage.textContent
+        });
+        
+        document.getElementById('total-revenue-value').textContent = dashboardRevenue.textContent;
+        document.getElementById('total-invoices-value').textContent = dashboardInvoices.textContent;
+        document.getElementById('active-clients-value').textContent = dashboardClients.textContent;
+        document.getElementById('avg-invoice-value').textContent = dashboardAverage.textContent;
+    } else {
+        // Fallback to calculation
+        console.log('🔬 Dashboard values not found, calculating...');
+        const stats = getStats(invoices, clients, appData.monthlyEarnings);
+        console.log('🔬 Calculated stats:', stats);
+        
+        document.getElementById('total-revenue-value').textContent = `₹${formatNumber(stats.totalEarnings)}`;
+        document.getElementById('total-invoices-value').textContent = stats.totalInvoices;
+        document.getElementById('active-clients-value').textContent = stats.totalClients;
+        document.getElementById('avg-invoice-value').textContent = `₹${formatNumber(stats.avgInvoice)}`;
+    }
 }
 
-function renderAnalyticsChart(period = 'monthly') {
+function renderAnalyticsChart(period = 'monthly', filteredInvoices = null) {
     try {
         console.log('🔬 Starting renderAnalyticsChart...');
         
@@ -7035,21 +7068,25 @@ function renderAnalyticsChart(period = 'monthly') {
             console.error('❌ Chart.js is not loaded');
             return;
         }
-        
+
         const canvas = document.getElementById('analyticsChart');
         if (!canvas) {
             console.error('❌ Analytics chart canvas not found');
             return;
         }
     
-        // Destroy existing chart
+        // Destroy existing chart safely
         if (window.analyticsChart && typeof window.analyticsChart.destroy === 'function') {
-            window.analyticsChart.destroy();
+            try {
+                window.analyticsChart.destroy();
+            } catch (e) {
+                console.warn('Error destroying analytics chart:', e);
+            }
+            window.analyticsChart = null;
         }
-        
-        const invoices = getFilteredAnalyticsData();
+
+        const invoices = filteredInvoices || getFilteredAnalyticsData();
         let chartData;
-        
         switch (period) {
             case 'quarterly':
                 chartData = calculateQuarterlyEarnings(invoices);
@@ -7101,14 +7138,31 @@ function renderAnalyticsChart(period = 'monthly') {
     }
 }
 
-function renderClientDistributionChart(invoices, clients) {
+function renderClientDistributionChart(filteredInvoices = null, filteredClients = null) {
     const canvas = document.getElementById('clientDistributionChart');
-    if (!canvas) return;
-    
-    // Destroy existing chart
-    if (window.clientDistributionChart) {
-        window.clientDistributionChart.destroy();
+    if (!canvas) {
+        console.error('❌ Client distribution chart canvas not found');
+        return;
     }
+    
+    // Check if Chart.js is loaded
+    if (typeof Chart === 'undefined') {
+        console.error('❌ Chart.js is not loaded for client distribution chart');
+        return;
+    }
+    
+    // Destroy existing chart safely
+    if (window.clientDistributionChart && typeof window.clientDistributionChart.destroy === 'function') {
+        try {
+            window.clientDistributionChart.destroy();
+        } catch (e) {
+            console.warn('Error destroying client distribution chart:', e);
+        }
+        window.clientDistributionChart = null;
+    }
+    
+    const invoices = filteredInvoices || (appData?.invoices || []);
+    const clients = filteredClients || (appData?.clients || []);
     
     // Calculate client revenue distribution
     const clientRevenue = {};
@@ -7159,14 +7213,21 @@ function renderClientDistributionChart(invoices, clients) {
     });
 }
 
-function renderStatusBreakdownChart(invoices) {
+function renderStatusBreakdownChart(filteredInvoices = null) {
     const canvas = document.getElementById('statusBreakdownChart');
     if (!canvas) return;
     
-    // Destroy existing chart
-    if (window.statusBreakdownChart) {
-        window.statusBreakdownChart.destroy();
+    // Destroy existing chart safely
+    if (window.statusBreakdownChart && typeof window.statusBreakdownChart.destroy === 'function') {
+        try {
+            window.statusBreakdownChart.destroy();
+        } catch (e) {
+            console.warn('Error destroying status breakdown chart:', e);
+        }
+        window.statusBreakdownChart = null;
     }
+    
+    const invoices = filteredInvoices || (appData?.invoices || []);
     
     // Calculate status distribution
     const statusCounts = {
@@ -7361,22 +7422,107 @@ function getFilteredAnalyticsData() {
     return appData?.invoices || [];
 }
 
-function applyAnalyticsFilters() {
-    // Implement filter logic here
-    showToast('Filters applied successfully', 'success');
-    renderAnalyticsData();
+function applyAnalyticsFilters(showNotification = true) {
+    const searchTerm = document.getElementById('analytics-search-input')?.value?.toLowerCase() || '';
+    const dateFilter = document.getElementById('analytics-date-filter')?.value || 'all';
+    const clientFilter = document.getElementById('analytics-client-filter')?.value || 'all';
+    const statusFilter = document.getElementById('analytics-status-filter')?.value || 'all';
+    const paidOnly = document.getElementById('paid-only')?.checked || false;
+    
+    let filteredInvoices = appData?.invoices || [];
+    let filteredClients = appData?.clients || [];
+    
+    // Apply search filter
+    if (searchTerm) {
+        filteredInvoices = filteredInvoices.filter(inv => 
+            (inv.client?.toLowerCase().includes(searchTerm)) ||
+            (inv.id?.toLowerCase().includes(searchTerm)) ||
+            (inv.status?.toLowerCase().includes(searchTerm))
+        );
+        
+        filteredClients = filteredClients.filter(client =>
+            (client.name?.toLowerCase().includes(searchTerm)) ||
+            (client.email?.toLowerCase().includes(searchTerm)) ||
+            (client.company?.toLowerCase().includes(searchTerm))
+        );
+    }
+    
+    // Apply status filter
+    if (statusFilter !== 'all') {
+        filteredInvoices = filteredInvoices.filter(inv => inv.status === statusFilter);
+    }
+    
+    // Apply paid only filter
+    if (paidOnly) {
+        filteredInvoices = filteredInvoices.filter(inv => inv.status === 'Paid');
+    }
+    
+    // Apply client filter
+    if (clientFilter !== 'all') {
+        filteredInvoices = filteredInvoices.filter(inv => inv.clientId === clientFilter);
+    }
+    
+    // Apply date filter
+    if (dateFilter !== 'all') {
+        const now = new Date();
+        let startDate;
+        
+        switch(dateFilter) {
+            case 'today':
+                startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                break;
+            case '7d':
+                startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+                break;
+            case '30d':
+                startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+                break;
+            case 'ytd':
+                startDate = new Date(now.getFullYear(), 0, 1);
+                break;
+        }
+        
+        if (startDate) {
+            filteredInvoices = filteredInvoices.filter(inv => {
+                const invDate = new Date(inv.date);
+                return invDate >= startDate;
+            });
+        }
+    }
+    
+    // Update results count
+    const resultsCount = document.getElementById('analytics-results-count');
+    if (resultsCount) {
+        resultsCount.textContent = `Analyzing ${filteredInvoices.length} invoices, ${filteredClients.length} clients`;
+    }
+    
+    // Only show notification if explicitly requested (not on search typing)
+    if (showNotification) {
+        showToast('Filters applied successfully', 'success');
+    }
+    
+    // Update charts with filtered data
+    renderAnalyticsChart('monthly', filteredInvoices);
+    renderClientDistributionChart(filteredInvoices, filteredClients);
+    renderStatusBreakdownChart(filteredInvoices);
 }
 
 function clearAnalyticsFilters() {
     // Reset all filter controls
+    document.getElementById('analytics-search-input').value = '';
     document.getElementById('analytics-period').value = 'monthly';
-    document.getElementById('analytics-date-range').value = 'last_6_months';
     document.getElementById('analytics-client-filter').value = 'all';
     document.getElementById('analytics-status-filter').value = 'all';
-    document.getElementById('custom-date-range').classList.add('hidden');
+    document.getElementById('analytics-date-filter').value = 'all';
+    document.getElementById('paid-only').checked = false;
+    
+    // Reset chip selection
+    const chips = document.querySelectorAll('#analytics-filters .chip');
+    chips.forEach(c => c.classList.remove('active'));
+    document.querySelector('#analytics-filters .chip[data-preset="all"]')?.classList.add('active');
     
     showToast('Filters cleared', 'info');
-    renderAnalyticsData();
+    applyAnalyticsFilters(false); // Apply without notification
 }
 
 function exportAnalyticsReport() {
