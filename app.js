@@ -58,19 +58,13 @@ function renderClientsGrid() {
                     </div>
                     <div class="client-actions-modern">
                         <button class="action-btn-modern edit" data-client-id="${client.id}" title="Edit client">
-                            <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
-                            </svg>
+                            ✏️
                         </button>
                         <button class="action-btn-modern delete" data-client-id="${client.id}" data-client-name="${escapeHtml(client.name)}" title="Delete client">
-                            <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
-                            </svg>
+                            🗑️
                         </button>
                         <button class="action-btn-modern more" title="More options">
-                            <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/>
-                            </svg>
+                            ⋯
                         </button>
                     </div>
                 </div>
@@ -1265,9 +1259,15 @@ class ExpenseUI {
                     ${this.getPaymentMethodTag(expense.paymentMethod)}
                 </td>
                 <td class="actions-column">
-                    <button class="action-btn edit" data-expense-id="${expense.id}" title="Edit Expense">✏️</button>
-                    <button class="action-btn" data-expense-id="${expense.id}" title="Duplicate">📋</button>
-                    <button class="action-btn delete" data-expense-id="${expense.id}" title="Delete">🗑️</button>
+                    <button class="action-btn edit" data-expense-id="${expense.id}" title="Edit Expense">
+                        ✏️
+                    </button>
+                    <button class="action-btn" data-expense-id="${expense.id}" title="Duplicate">
+                        📋
+                    </button>
+                    <button class="action-btn delete" data-expense-id="${expense.id}" title="Delete">
+                        🗑️
+                    </button>
                 </td>
             </tr>
         `).join('');
@@ -2460,12 +2460,65 @@ function checkAuth() {
     return true;
 }
 
-// Logout function
+// ENHANCED: Modern logout function with confirmation
 function logout() {
-    localStorage.removeItem('isLoggedIn');
-    localStorage.removeItem('username');
-    localStorage.removeItem('loginTime');
-    window.location.href = 'login.html';
+    // Create modern confirmation modal
+    const confirmModal = document.createElement('div');
+    confirmModal.className = 'modal-overlay logout-confirm-modal';
+    confirmModal.innerHTML = `
+        <div class="modal-content logout-confirm-content">
+            <div class="logout-confirm-header">
+                <div class="logout-icon">
+                    <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.59L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/>
+                    </svg>
+                </div>
+                <h3>Sign Out</h3>
+                <p>Are you sure you want to sign out of your account?</p>
+            </div>
+            <div class="logout-confirm-actions">
+                <button class="btn btn--secondary cancel-logout">Cancel</button>
+                <button class="btn btn--danger confirm-logout">
+                    <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.59L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/>
+                    </svg>
+                    Sign Out
+                </button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(confirmModal);
+    
+    // Add event listeners
+    confirmModal.querySelector('.cancel-logout').addEventListener('click', () => {
+        document.body.removeChild(confirmModal);
+    });
+    
+    confirmModal.querySelector('.confirm-logout').addEventListener('click', () => {
+        // Actual logout process
+        localStorage.removeItem('isLoggedIn');
+        localStorage.removeItem('username');
+        localStorage.removeItem('loginTime');
+        localStorage.removeItem('userData');
+        
+        // Show logout success message
+        showToast('Successfully signed out! 👋', 'success');
+        
+        // Smooth redirect to login
+        setTimeout(() => {
+            window.location.href = 'login.html';
+        }, 800);
+        
+        document.body.removeChild(confirmModal);
+    });
+    
+    // Close modal when clicking outside
+    confirmModal.addEventListener('click', (e) => {
+        if (e.target === confirmModal) {
+            document.body.removeChild(confirmModal);
+        }
+    });
 }
 
 // Only proceed if authenticated
@@ -2706,7 +2759,7 @@ async function initializeApp() {
     try {
         console.log('🚀 Starting app initialization...');
         showLoadingState(true);
-        addLogoutButton();
+        initializeSidebar();
         
         // Initialize appData if it doesn't exist
         if (!window.appData) {
@@ -2897,22 +2950,25 @@ function showLoadingState(show) {
     loader.style.display = show ? 'flex' : 'none';
 }
 
-function addLogoutButton() {
-    const sidebarHeader = document.querySelector('.sidebar-header');
-    if (sidebarHeader && !document.getElementById('logout-btn')) {
-        const username = localStorage.getItem('username') || 'User';
-        const logoutBtn = document.createElement('button');
-        logoutBtn.id = 'logout-btn';
-        logoutBtn.className = 'btn btn--sm btn--secondary';
-        logoutBtn.innerHTML = `👋 ${username} | Logout`;
-        logoutBtn.style.cssText = `
-            margin-top: 10px;
-            width: 100%;
-            font-size: 12px;
-            padding: 6px 10px;
-        `;
+// ENHANCED: Initialize modern sidebar (logout button now in HTML)
+function initializeSidebar() {
+    // Update username in user info if needed
+    const username = localStorage.getItem('username') || 'User';
+    const userDetails = document.querySelector('.user-details h4');
+    const userAvatar = document.querySelector('.user-avatar');
+    
+    if (userDetails) {
+        userDetails.textContent = username;
+    }
+    
+    if (userAvatar) {
+        userAvatar.textContent = username.substring(0, 2).toUpperCase();
+    }
+    
+    // Ensure logout button has proper event listener (backup)
+    const logoutBtn = document.getElementById('logout-btn');
+    if (logoutBtn) {
         logoutBtn.onclick = logout;
-        sidebarHeader.appendChild(logoutBtn);
     }
 }
 
@@ -4658,25 +4714,17 @@ function renderRecentInvoices() {
                 <td>
                     <div class="action-buttons compact">
                         <button class="action-btn view" onclick="viewInvoice('${invoice.id}')" title="View Invoice">
-                            <svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
-                            </svg>
+                            👁️
                         </button>
                         <button class="action-btn edit" onclick="editInvoice('${invoice.id}')" title="Edit Invoice">
-                            <svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
-                            </svg>
+                            ✏️
                         </button>
                         <button class="action-btn download" onclick="downloadInvoice('${invoice.id}')" title="Download PDF">
-                            <svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
-                            </svg>
+                            📄
                         </button>
                         ${invoice.status === 'Pending' ? `
                             <button class="action-btn success" onclick="changeInvoiceStatus('${invoice.id}', 'Paid')" title="Mark as Paid">
-                                <svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24">
-                                    <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
-                                </svg>
+                                💰
                             </button>
                         ` : ''}
                     </div>
@@ -5583,10 +5631,18 @@ function renderInvoices() {
             <td><span class="status-badge ${invoice.status.toLowerCase()}">${invoice.status}</span></td>
             <td>
                 <div class="action-buttons">
-                    <button class="action-btn view" onclick="viewInvoice('${invoice.id}')">👁️</button>
-                    <button class="action-btn edit" onclick="editInvoice('${invoice.id}')">✏️</button>
-                    <button class="action-btn download" onclick="downloadInvoice('${invoice.id}')" title="Download PDF">📥</button>
-                    <button class="action-btn delete" onclick="deleteInvoice('${invoice.id}')">🗑️</button>
+                    <button class="action-btn view" onclick="viewInvoice('${invoice.id}')" title="View Invoice">
+                        👁️
+                    </button>
+                    <button class="action-btn edit" onclick="editInvoice('${invoice.id}')" title="Edit Invoice">
+                        ✏️
+                    </button>
+                    <button class="action-btn download" onclick="downloadInvoice('${invoice.id}')" title="Download PDF">
+                        📄
+                    </button>
+                    <button class="action-btn delete" onclick="deleteInvoice('${invoice.id}')" title="Delete Invoice">
+                        🗑️
+                    </button>
                 </div>
             </td>
         </tr>
@@ -5783,24 +5839,16 @@ function renderInvoicesTable(invoices = appData.invoices) {
                 <td class="actions-cell">
                     <div class="action-buttons">
                         <button class="action-btn view" onclick="viewInvoice('${invoice.id}')" title="View Invoice">
-                            <svg width="12" height="12" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M12,9A3,3 0 0,0 9,12A3,3 0 0,0 12,15A3,3 0 0,0 15,12A3,3 0 0,0 12,9M12,17A5,5 0 0,1 7,12A5,5 0 0,1 12,7A5,5 0 0,1 17,12A5,5 0 0,1 12,17M12,4.5C7,4.5 2.73,7.61 1,12C2.73,16.39 7,19.5 12,19.5C17,19.5 21.27,16.39 23,12C21.27,7.61 17,4.5 12,4.5Z"/>
-                            </svg>
+                            👁️
                         </button>
                         <button class="action-btn download" onclick="downloadInvoice('${invoice.id}')" title="Download Invoice">
-                            <svg width="12" height="12" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/>
-                            </svg>
+                            📄
                         </button>
                         <button class="action-btn edit" onclick="editInvoice('${invoice.id}')" title="Edit Invoice">
-                            <svg width="12" height="12" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M20.71,7.04C21.1,6.65 21.1,6 20.71,5.63L18.37,3.29C18,2.9 17.35,2.9 16.96,3.29L15.12,5.12L18.87,8.87M3,17.25V21H6.75L17.81,9.93L14.06,6.18L3,17.25Z"/>
-                            </svg>
+                            ✏️
                         </button>
                         <button class="action-btn delete" onclick="deleteInvoice('${invoice.id}')" title="Delete Invoice">
-                            <svg width="12" height="12" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19Z"/>
-                            </svg>
+                            🗑️
                         </button>
                     </div>
                 </td>
@@ -6542,19 +6590,13 @@ function renderClients() {
                     </div>
                     <div class="client-actions-modern">
                         <button class="action-btn-modern edit" data-client-id="${client.id}" title="Edit client">
-                            <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
-                            </svg>
+                            Edit
                         </button>
                         <button class="action-btn-modern delete" data-client-id="${client.id}" data-client-name="${escapeHtml(client.name)}" title="Delete client">
-                            <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
-                            </svg>
+                            Delete
                         </button>
                         <button class="action-btn-modern more" title="More options">
-                            <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/>
-                            </svg>
+                            More
                         </button>
                     </div>
                 </div>
@@ -6748,7 +6790,7 @@ function viewClientDetails(clientId) {
             <div class="modal-header">
                 <h2>
                     <div class="modal-title-content">
-                        <span class="modal-icon">👤</span>
+                        <span class="modal-icon">👁️</span>
                         <span>Client Details</span>
                         <span class="view-badge">View</span>
                     </div>
@@ -8548,7 +8590,9 @@ async function openInvoiceModal(invoiceId = null) {
                                     Cancel
                                 </button>
                                 <button type="button" class="btn btn--primary modern" id="update-invoice">
-                                    <span class="btn-icon">💾</span>
+                                    <svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24" style="margin-right: 6px;">
+                                        <path d="M15,9H5V5H15M12,19A3,3 0 0,1 9,16A3,3 0 0,1 12,13A3,3 0 0,1 15,16A3,3 0 0,1 12,19M17,3H5C3.89,3 3,3.9 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V7L17,3Z"/>
+                                    </svg>
                                     Update Invoice
                                 </button>
                             </div>
@@ -8634,7 +8678,7 @@ async function openInvoiceModal(invoiceId = null) {
             if (modalTitle) {
                 modalTitle.innerHTML = `
                     <div class="modal-title-content">
-                        <span class="modal-icon">➕</span>
+                        <span class="modal-icon">New</span>
                         <span>Create New Invoice</span>
                         <span class="new-badge">New</span>
                     </div>
@@ -8670,11 +8714,15 @@ async function openInvoiceModal(invoiceId = null) {
                     <div class="modal-footer-content">
                         <div class="action-buttons">
                             <button type="button" class="btn btn--secondary modern" id="save-draft">
-                                <span class="btn-icon">📄</span>
+                                <svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24" style="margin-right: 6px;">
+                                    <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/>
+                                </svg>
                                 Save as Draft
                             </button>
                             <button type="submit" class="btn btn--primary modern" id="save-invoice">
-                                <span class="btn-icon">✨</span>
+                                <svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24" style="margin-right: 6px;">
+                                    <path d="M12,17.27L18.18,21L16.54,13.97L22,9.24L14.81,8.62L12,2L9.19,8.62L2,9.24L7.46,13.97L5.82,21L12,17.27Z"/>
+                                </svg>
                                 Create Invoice
                             </button>
                         </div>
@@ -8744,7 +8792,7 @@ function openClientModal(clientId = null) {
             if (modalTitle) {
                 modalTitle.innerHTML = `
                     <div class="modal-title-content">
-                        <span class="modal-icon">👤</span>
+                        <span class="modal-icon">➕</span>
                         <span>Add New Client</span>
                         <span class="new-badge">New</span>
                     </div>
