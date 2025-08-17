@@ -7120,6 +7120,53 @@ select.form-control {
     color: var(--primary);
 }
 
+.filters-advanced-toggle.expanded {
+    color: var(--primary);
+}
+
+.filters-advanced-toggle .chevron {
+    transition: transform 0.2s ease;
+}
+
+.filters-advanced-toggle.expanded .chevron {
+    transform: rotate(180deg);
+}
+
+/* Advanced filters panel styling */
+.filters-advanced-panel {
+    margin-top: 16px;
+    padding: 16px;
+    background: rgba(248, 250, 252, 0.5);
+    border-radius: 8px;
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    display: none; /* Hidden by default */
+}
+
+.filters-advanced-panel .filters-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.filters-advanced-panel .date-inputs {
+    display: flex;
+    gap: 8px;
+}
+
+.filters-advanced-panel .date-inputs input {
+    flex: 1;
+}
+
+.filters-advanced-panel .filters-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+    border-top: 1px solid rgba(0, 0, 0, 0.06);
+    padding-top: 12px;
+    margin-top: 12px;
+}
+
 .filters-card .caret {
     transition: transform 0.2s ease;
     display: inline-block;

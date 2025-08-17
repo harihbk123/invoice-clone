@@ -2676,6 +2676,19 @@ document.addEventListener('DOMContentLoaded', function() {
                 applyAnalyticsFilters();
             } else if (e.target.id === 'clear-filters') {
                 clearAnalyticsFilters();
+            } else if (e.target.id === 'analytics-filters-advanced-toggle') {
+                // Handle advanced filters toggle
+                const advancedPanel = document.getElementById('analytics-filters-advanced-panel');
+                if (advancedPanel) {
+                    const isExpanded = e.target.getAttribute('aria-expanded') === 'true';
+                    e.target.setAttribute('aria-expanded', !isExpanded);
+                    advancedPanel.style.display = isExpanded ? 'none' : 'block';
+                    e.target.classList.toggle('expanded', !isExpanded);
+                }
+            } else if (e.target.id === 'apply-analytics-filters') {
+                applyAnalyticsFilters();
+            } else if (e.target.id === 'clear-analytics-filters') {
+                clearAnalyticsFilters();
             }
         });
         analyticsPage.addEventListener('change', (e) => {
