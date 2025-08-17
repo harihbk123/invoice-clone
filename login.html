@@ -12,10 +12,11 @@
         }
 
         :root {
-            --glass-bg: rgba(255, 255, 255, 0.15);
-            --glass-border: rgba(255, 255, 255, 0.2);
-            --text-primary: #ffffff;
-            --text-secondary: rgba(255, 255, 255, 0.8);
+            --glass-bg: rgba(255, 255, 255, 0.25);
+            --glass-border: rgba(255, 255, 255, 0.3);
+            --text-primary: #1a1a2e;
+            --text-secondary: #16213e;
+            --text-light: rgba(255, 255, 255, 0.95);
             --error-bg: rgba(255, 84, 89, 0.2);
             --error-border: rgba(255, 84, 89, 0.4);
             --error-text: #ff5459;
@@ -83,14 +84,15 @@
         }
 
         .login-card {
-            background: var(--glass-bg);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
             border-radius: 24px;
-            border: 1px solid var(--glass-border);
+            border: 1px solid rgba(255, 255, 255, 0.4);
             box-shadow: 
                 0 8px 32px 0 rgba(31, 38, 135, 0.37),
-                inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+                0 2px 8px 0 rgba(0, 0, 0, 0.1),
+                inset 0 0 0 1px rgba(255, 255, 255, 0.9);
             overflow: hidden;
             position: relative;
         }
@@ -128,14 +130,16 @@
         .login-header h1 {
             font-size: 36px;
             font-weight: 700;
-            color: var(--text-primary);
+            background: linear-gradient(135deg, #1FB8CD 0%, #26A0AD 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
             margin-bottom: 10px;
-            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
             letter-spacing: -0.5px;
         }
 
         .login-header p {
-            color: var(--text-secondary);
+            color: #4a5568;
             font-size: 16px;
             font-weight: 400;
         }
@@ -152,9 +156,9 @@
 
         .form-label {
             display: block;
-            color: var(--text-secondary);
+            color: #2d3748;
             font-size: 13px;
-            font-weight: 500;
+            font-weight: 600;
             margin-bottom: 8px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
@@ -163,25 +167,26 @@
         .form-control {
             width: 100%;
             padding: 16px 20px;
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid var(--glass-border);
+            background: rgba(255, 255, 255, 0.9);
+            border: 2px solid rgba(31, 184, 205, 0.2);
             border-radius: 50px;
-            color: var(--text-primary);
+            color: #1a202c;
             font-size: 16px;
             transition: all 0.3s ease;
             outline: none;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
         }
 
         .form-control::placeholder {
-            color: rgba(255, 255, 255, 0.5);
+            color: #a0aec0;
         }
 
         .form-control:focus {
-            background: rgba(255, 255, 255, 0.15);
-            border-color: rgba(255, 255, 255, 0.4);
+            background: rgba(255, 255, 255, 1);
+            border-color: #1FB8CD;
             box-shadow: 
-                0 0 0 4px rgba(255, 255, 255, 0.1),
-                0 0 20px rgba(31, 184, 205, 0.2);
+                0 0 0 4px rgba(31, 184, 205, 0.1),
+                0 2px 8px rgba(31, 184, 205, 0.2);
         }
 
         .btn {
@@ -229,13 +234,14 @@
         }
 
         .login-error {
-            background: var(--error-bg);
-            color: var(--text-primary);
+            background: rgba(254, 226, 226, 0.9);
+            color: #991b1b;
             padding: 14px 18px;
             border-radius: 12px;
             margin-top: 20px;
-            border: 1px solid var(--error-border);
+            border: 1px solid rgba(239, 68, 68, 0.3);
             font-size: 14px;
+            font-weight: 500;
             backdrop-filter: blur(10px);
             animation: slideDown 0.3s ease;
         }
@@ -254,14 +260,15 @@
         .login-footer {
             text-align: center;
             padding: 25px 40px;
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
-            background: rgba(255, 255, 255, 0.05);
+            border-top: 1px solid rgba(31, 184, 205, 0.1);
+            background: rgba(255, 255, 255, 0.3);
         }
 
         .login-footer p {
-            color: var(--text-secondary);
+            color: #4a5568;
             font-size: 13px;
             margin: 0;
+            font-weight: 500;
         }
 
         /* Social login section (optional enhancement) */
@@ -282,10 +289,11 @@
         }
 
         .divider span {
-            background: var(--glass-bg);
+            background: rgba(255, 255, 255, 0.85);
             padding: 0 15px;
-            color: var(--text-secondary);
+            color: #4a5568;
             font-size: 13px;
+            font-weight: 600;
             position: relative;
             backdrop-filter: blur(20px);
         }
@@ -299,11 +307,12 @@
         .social-btn {
             flex: 1;
             padding: 12px;
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid var(--glass-border);
+            background: rgba(255, 255, 255, 0.7);
+            border: 2px solid rgba(31, 184, 205, 0.2);
             border-radius: 12px;
-            color: var(--text-primary);
+            color: #2d3748;
             font-size: 14px;
+            font-weight: 600;
             cursor: pointer;
             transition: all 0.3s ease;
             display: flex;
@@ -313,8 +322,10 @@
         }
 
         .social-btn:hover {
-            background: rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.95);
+            border-color: #1FB8CD;
             transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(31, 184, 205, 0.2);
         }
 
         /* Loading animation */
