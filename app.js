@@ -13,16 +13,174 @@ function getStats(invoices, clients, monthlyEarnings) {
 }
 // Renders the clients grid (used by search, filters, etc.)
 function renderClientsGrid() {
-    // This function should re-render the clients grid using appData.clients
-    // If you have a modern grid, call the main renderClients or similar
-    if (typeof renderClients === 'function') {
-        renderClients();
-    } else {
-        // Fallback: simple DOM update
-        const grid = document.getElementById('clients-grid-enhanced');
-        if (!grid) return;
-        grid.innerHTML = appData.clients.map(client => `<div>${client.name}</div>`).join('');
+    const grid = document.getElementById('clients-grid-enhanced');
+    if (!grid) return;
+
+    if (appData.clients.length === 0) {
+        grid.innerHTML = `
+            <div class="empty-state-modern">
+                <div class="empty-icon">
+                    <svg width="64" height="64" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                    </svg>
+                </div>
+                <h3>No clients found</h3>
+                <p>No clients match your search criteria</p>
+                <button class="btn-modern btn-primary" onclick="viewAllClients()">
+                    <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                    </svg>
+                    View All Clients
+                </button>
+            </div>
+        `;
+        return;
     }
+
+    // Generate enhanced client cards (same as in renderClients)
+    grid.innerHTML = appData.clients.map((client, index) => {
+        const avatar = client.name.charAt(0).toUpperCase();
+        const completionRate = client.total_invoices > 0 ? Math.min(100, ((client.total_amount || 0) / 50000) * 100) : 0;
+        const isActive = index % 3 !== 2; // Make some inactive for demo
+        const lastInvoice = appData.invoices.filter(inv => inv.clientId === client.id).sort((a, b) => new Date(b.date) - new Date(a.date))[0];
+        const lastActivity = lastInvoice ? `Last invoice ${formatTimeAgo(lastInvoice.date)}` : 'No recent activity';
+        
+        return `
+            <div class="client-card-modern ${isActive ? 'active' : 'inactive'}" data-client-id="${client.id}">
+                <div class="client-card-header-modern">
+                    <div class="client-avatar-section">
+                        <div class="client-avatar-large gradient-${['primary', 'success', 'warning', 'info'][index % 4]}">
+                            <span class="avatar-text">${avatar}</span>
+                        </div>
+                        <div class="client-tier-badge ${(client.tier || 'Standard').toLowerCase()}">
+                            ${client.tier || 'Standard'}
+                        </div>
+                    </div>
+                    <div class="client-actions-modern">
+                        <button class="action-btn-modern edit" data-client-id="${client.id}" title="Edit client">
+                            <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+                            </svg>
+                        </button>
+                        <button class="action-btn-modern delete" data-client-id="${client.id}" data-client-name="${escapeHtml(client.name)}" title="Delete client">
+                            <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+                            </svg>
+                        </button>
+                        <button class="action-btn-modern more" title="More options">
+                            <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="client-info-modern">
+                    <h3 class="client-name-modern">${escapeHtml(client.name)}</h3>
+                    <div class="client-contact-grid">
+                        <div class="contact-item-modern">
+                            <svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
+                            </svg>
+                            <span class="contact-text">${escapeHtml(client.email)}</span>
+                        </div>
+                        ${client.phone ? `
+                        <div class="contact-item-modern">
+                            <svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/>
+                            </svg>
+                            <span class="contact-text">${escapeHtml(client.phone)}</span>
+                        </div>
+                        ` : ''}
+                        ${client.contact_name ? `
+                        <div class="contact-item-modern">
+                            <svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                            </svg>
+                            <span class="contact-text">${escapeHtml(client.contact_name)}</span>
+                        </div>
+                        ` : ''}
+                    </div>
+                </div>
+
+                <div class="client-metrics-modern">
+                    <div class="metrics-grid-mini">
+                        <div class="metric-mini">
+                            <div class="metric-mini-label">Total Invoices</div>
+                            <div class="metric-mini-value">${client.total_invoices || 0}</div>
+                        </div>
+                        <div class="metric-mini">
+                            <div class="metric-mini-label">Total Revenue</div>
+                            <div class="metric-mini-value">₹${formatNumber(client.total_amount || 0)}</div>
+                        </div>
+                    </div>
+                    
+                    <div class="progress-section">
+                        <div class="progress-header">
+                            <span class="progress-label">Payment Completion</span>
+                            <span class="progress-percentage">${completionRate.toFixed(0)}%</span>
+                        </div>
+                        <div class="progress-bar-container">
+                            <div class="progress-bar" style="width: ${completionRate}%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="client-footer-modern">
+                    <div class="activity-info">
+                        <svg width="12" height="12" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                        </svg>
+                        <span class="activity-text">${lastActivity}</span>
+                    </div>
+                    <button class="view-details-btn" onclick="viewClientDetails('${client.id}')">
+                        View Details
+                        <svg width="12" height="12" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    // Re-attach event handlers for the new grid items
+    setTimeout(() => {
+        setupClientCardEventListeners();
+    }, 0);
+}
+
+// Setup event listeners for client cards
+function setupClientCardEventListeners() {
+    // Edit client buttons
+    document.querySelectorAll('.action-btn-modern.edit').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const clientId = btn.dataset.clientId;
+            editClient(clientId);
+        });
+    });
+
+    // Delete client buttons
+    document.querySelectorAll('.action-btn-modern.delete').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const clientId = btn.dataset.clientId;
+            const clientName = btn.dataset.clientName;
+            deleteClient(clientId, clientName);
+        });
+    });
+
+    // Client card click (for details)
+    document.querySelectorAll('.client-card-modern').forEach(card => {
+        card.addEventListener('click', (e) => {
+            // Don't trigger if clicking on action buttons
+            if (e.target.closest('.action-btn-modern')) return;
+            
+            const clientId = card.dataset.clientId;
+            viewClientDetails(clientId);
+        });
+    });
 }
 // ============================================
 // COMPLETE EXPENSE MANAGEMENT SYSTEM - FIXED VERSION
@@ -6457,7 +6615,93 @@ function renderClients() {
         `;
     }).join('');
 
-    console.log('Enhanced clients page rendered successfully');
+    // Initialize the enhanced clients page
+    initializeClientFilters();
+    initializeSimpleSearch();
+    setupClientPageButtons();
+    
+    console.log('✅ Enhanced clients page rendered successfully with filters and search initialized');
+    
+    // Initialize client filters and search functionality
+    initializeClientFilters();
+    initializeSimpleSearch();
+    
+    // Setup client page buttons with a delay to ensure DOM is ready
+    setTimeout(() => {
+        setupClientPageButtons();
+    }, 100);
+}
+
+function setupClientPageButtons() {
+    console.log('🔧 Setting up client page buttons...');
+    
+    // Setup "Add Client" button
+    const addClientBtn = document.getElementById('add-client-btn');
+    if (addClientBtn) {
+        // Remove existing listener if any
+        addClientBtn.removeAttribute('data-listener-attached');
+        const newBtn = addClientBtn.cloneNode(true);
+        addClientBtn.parentNode.replaceChild(newBtn, addClientBtn);
+        newBtn.setAttribute('data-listener-attached', 'true');
+        newBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('🎯 Add Client button clicked - opening modal');
+            if (typeof openClientModal === 'function') {
+                openClientModal();
+            } else {
+                console.error('❌ openClientModal function not found');
+            }
+        });
+        console.log('✅ Add Client button event listener attached');
+    }
+
+    // Setup client action buttons (edit, delete, etc.)
+    const clientCards = document.querySelectorAll('.client-card-modern');
+    clientCards.forEach(card => {
+        const editBtn = card.querySelector('.action-btn-modern.edit');
+        const deleteBtn = card.querySelector('.action-btn-modern.delete');
+        const viewBtn = card.querySelector('.client-details-btn');
+
+        if (editBtn) {
+            editBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const clientId = editBtn.dataset.clientId;
+                console.log('Edit client clicked:', clientId);
+                if (typeof editClient === 'function') {
+                    editClient(clientId);
+                }
+            });
+        }
+
+        if (deleteBtn) {
+            deleteBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const clientId = deleteBtn.dataset.clientId;
+                const clientName = deleteBtn.dataset.clientName;
+                console.log('Delete client clicked:', clientId, clientName);
+                if (typeof deleteClient === 'function') {
+                    deleteClient(clientId, clientName);
+                }
+            });
+        }
+
+        if (viewBtn) {
+            viewBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const clientId = viewBtn.dataset.clientId;
+                console.log('View client details clicked:', clientId);
+                if (typeof viewClientDetails === 'function') {
+                    viewClientDetails(clientId);
+                }
+            });
+        }
+    });
+    
+    console.log('✅ Client page buttons setup completed');
 }
 
 // Helper functions for enhanced clients page
@@ -9220,14 +9464,31 @@ function initializeSimpleSearch() {
     const searchInput = document.getElementById('client-search-input');
     const clearBtn = document.getElementById('clear-search');
     
-    if (!searchInput) return;
+    if (!searchInput) {
+        console.log('Client search input not found');
+        return;
+    }
+    
+    console.log('Initializing client search...');
     
     // Store original clients
     clientSearchState.originalClients = [...appData.clients];
     
+    // Prevent form submission on Enter key
+    searchInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            return false;
+        }
+    });
+    
     // Real-time search with debounce
-    searchInput.addEventListener('input', debounce((e) => {
+    searchInput.addEventListener('input', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        
         const query = e.target.value.trim();
+        console.log('Client search input:', query);
         
         if (query.length === 0) {
             clearClientSearch();
@@ -9239,16 +9500,20 @@ function initializeSimpleSearch() {
         if (clearBtn) {
             clearBtn.style.display = query.length > 0 ? 'block' : 'none';
         }
-    }, 300));
+    });
     
     // Clear search functionality
     if (clearBtn) {
-        clearBtn.addEventListener('click', () => {
+        clearBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
             searchInput.value = '';
             clearClientSearch();
             clearBtn.style.display = 'none';
         });
     }
+    
+    console.log('Client search initialized successfully');
 }
 
 // Perform simple client search
@@ -9276,6 +9541,52 @@ function performClientSearch(query) {
     renderClientsGrid();
     
     console.log(`Search: "${query}" - Found ${filteredClients.length} clients`);
+    
+    // Update search status
+    updateClientSearchStatus(filteredClients.length, query);
+}
+
+// Clear client search and show all clients
+function clearClientSearch() {
+    appData.clients = [...clientSearchState.originalClients];
+    clientSearchState.isSearching = false;
+    
+    // Re-render clients with all results
+    renderClientsGrid();
+    
+    // Hide search status
+    const searchStatus = document.getElementById('search-status');
+    if (searchStatus) {
+        searchStatus.style.display = 'none';
+    }
+    
+    console.log('Client search cleared - showing all clients');
+}
+
+// Function to be called from "View All Clients" button
+function viewAllClients() {
+    const searchInput = document.getElementById('client-search-input');
+    const clearBtn = document.getElementById('clear-search');
+    
+    if (searchInput) searchInput.value = '';
+    if (clearBtn) clearBtn.style.display = 'none';
+    
+    clearClientSearch();
+}
+
+// Update search status display
+function updateClientSearchStatus(count, query) {
+    const searchStatus = document.getElementById('search-status');
+    const searchStatusText = document.getElementById('search-status-text');
+    
+    if (searchStatus && searchStatusText) {
+        if (query && query.length > 0) {
+            searchStatusText.textContent = `Found ${count} client${count !== 1 ? 's' : ''} matching "${query}"`;
+            searchStatus.style.display = 'block';
+        } else {
+            searchStatus.style.display = 'none';
+        }
+    }
 }
 
 // Clear client search and restore all clients
@@ -9357,29 +9668,55 @@ function applyStatusFilter(status) {
 
 // Apply sort filter
 function applySortFilter(sortBy) {
-    let sortedClients = [...appData.clients];
+    console.log('Applying sort:', sortBy);
+    
+    // If we're currently searching, sort the search results
+    // Otherwise, sort the original clients
+    let clientsToSort;
+    if (clientSearchState.isSearching) {
+        clientsToSort = [...appData.clients];
+    } else {
+        clientsToSort = [...clientSearchState.originalClients];
+    }
     
     switch(sortBy) {
         case 'name':
-            sortedClients.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+            clientsToSort.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
             break;
         case 'recent':
-            // Sort by recent activity (assuming we have a last activity date)
-            sortedClients.sort((a, b) => {
-                const aDate = new Date(a.last_activity || a.created_at || 0);
-                const bDate = new Date(b.last_activity || b.created_at || 0);
+            // Sort by most recent invoice date
+            clientsToSort.sort((a, b) => {
+                // Find the most recent invoice for each client
+                const aLastInvoice = appData.invoices
+                    .filter(inv => inv.clientId === a.id)
+                    .sort((x, y) => new Date(y.date) - new Date(x.date))[0];
+                const bLastInvoice = appData.invoices
+                    .filter(inv => inv.clientId === b.id)
+                    .sort((x, y) => new Date(y.date) - new Date(x.date))[0];
+                
+                const aDate = aLastInvoice ? new Date(aLastInvoice.date) : new Date(0);
+                const bDate = bLastInvoice ? new Date(bLastInvoice.date) : new Date(0);
+                
                 return bDate - aDate;
             });
             break;
         case 'revenue':
         default:
-            sortedClients.sort((a, b) => (b.total_amount || 0) - (a.total_amount || 0));
+            clientsToSort.sort((a, b) => (b.total_amount || 0) - (a.total_amount || 0));
+            break;
     }
     
-    appData.clients = sortedClients;
+    // Update the clients array
+    appData.clients = clientsToSort;
+    
+    // If not searching, also update the original clients
+    if (!clientSearchState.isSearching) {
+        clientSearchState.originalClients = [...clientsToSort];
+    }
+    
     renderClientsGrid();
     
-    console.log(`Sort applied: ${sortBy}`);
+    console.log(`Sort applied: ${sortBy} - ${clientsToSort.length} clients sorted`);
 }
 
 // Switch client view between grid and list
