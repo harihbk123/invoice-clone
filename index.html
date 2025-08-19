@@ -12,6 +12,17 @@
     
     <!-- Third-party Libraries -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        // Initialize Supabase after library loads
+        window.addEventListener('DOMContentLoaded', function() {
+            if (typeof window.supabase !== 'undefined') {
+                console.log('Supabase library loaded successfully');
+                console.log('Available methods:', Object.keys(window.supabase));
+            } else {
+                console.error('Supabase library failed to load');
+            }
+        });
+    </script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
     <!-- Enhanced Stylesheet -->

@@ -494,9 +494,7 @@ class ExpenseUI {
                                             <span class="label-required">*</span>
                                         </label>
                                         <div class="input-wrapper">
-                                            <svg class="input-icon" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                                                <path d="M4 10.781c.148 1.667 1.513 2.85 3.591 3.003V15h1.043v-1.216c2.27-.179 3.678-1.438 3.678-3.3 0-1.59-.947-2.51-2.956-3.028l-.722-.187V3.467c1.122.11 1.879.714 2.07 1.616h1.47c-.166-1.6-1.54-2.748-3.54-2.875V1H7.591v1.233c-1.939.23-3.27 1.472-3.27 3.156 0 1.454.966 2.483 2.661 2.917l.61.162v4.031c-1.149-.17-1.94-.8-2.131-1.718H4zm3.391-3.836c-1.043-.263-1.6-.825-1.6-1.616 0-.944.704-1.641 1.8-1.828v3.495l-.2-.05zm1.591 1.872c1.287.323 1.852.859 1.852 1.769 0 1.097-.826 1.828-2.2 1.939V8.73l.348.086z"/>
-                                            </svg>
+                                            <span class="input-icon" style="font-size: 1.2em; margin-right: 4px;">₹</span>
                                             <input type="number" id="expense-amount" class="form-control modern-input" step="0.01" placeholder="0.00" required>
                                         </div>
                                     </div>
@@ -1610,6 +1608,12 @@ class ExpenseUI {
             // Clear existing options (except the default one)
             categorySelect.innerHTML = '<option value="">Select Category</option>';
             
+            // Ensure categories is an array
+            if (!Array.isArray(categories)) {
+                console.error('Categories is not an array:', categories);
+                return;
+            }
+            
             // Add categories to dropdown
             categories.forEach(category => {
                 const option = document.createElement('option');
@@ -1624,29 +1628,19 @@ class ExpenseUI {
             console.error('Error loading categories:', error);
             
             // Fallback to default categories if loading fails
-            const categories = [
-                { value: 'Travel', label: '✈️ Travel' },
-                { value: 'Food', label: '🍕 Food & Dining' },
-                { value: 'Office', label: '🏢 Office Supplies' },
-                { value: 'Marketing', label: '📢 Marketing' },
-                { value: 'Utilities', label: '⚡ Utilities' },
-                { value: 'Transportation', label: '🚗 Transportation' },
-                { value: 'Professional Services', label: '💼 Professional Services' },
-                { value: 'Internet & Phone', label: '📞 Internet & Phone' },
-                { value: 'Fashion', label: '👗 Fashion' },
-                { value: 'Grocery', label: '🛒 Grocery' },
-                { value: 'Entertainment', label: '🎭 Entertainment' },
-                { value: 'Health', label: '🏥 Health' },
-                { value: 'Education', label: '📚 Education' },
-                { value: 'Software', label: '💻 Software' },
-                { value: 'Miscellaneous', label: '📦 Miscellaneous' }
+            const fallbackCategories = [
+                { name: 'Travel', icon: '✈️', color: '#3B82F6' },
+                { name: 'Food', icon: '🍕', color: '#EF4444' },
+                { name: 'Office', icon: '🏢', color: '#10B981' },
+                { name: 'Marketing', icon: '📢', color: '#EC4899' },
+                { name: 'Utilities', icon: '⚡', color: '#06B6D4' }
             ];
             
-            categorySelect.innerHTML = '<option value="">Select Category</option>';
-            categories.forEach(category => {
+            fallbackCategories.forEach(category => {
                 const option = document.createElement('option');
-                option.value = category.value;
-                option.textContent = category.label;
+                option.value = category.name;
+                option.textContent = `${category.icon} ${category.name}`;
+                option.style.backgroundColor = category.color + '20';
                 categorySelect.appendChild(option);
             });
         }
@@ -1688,22 +1682,25 @@ class ExpenseUI {
         try {
             // Check if category already exists
             const existingCategories = await this.expenseManager.loadCategories();
+            
+            // Ensure existingCategories is an array
+            if (!Array.isArray(existingCategories)) {
+                console.error('Failed to load existing categories');
+                this.showToast('Failed to load categories', 'error');
+                return;
+            }
+            
             if (existingCategories.some(cat => cat.name.toLowerCase() === name.toLowerCase())) {
                 this.showToast('Category already exists', 'error');
                 return;
             }
 
-            // Save to Supabase
-            const { data, error } = await window.supabase
-                .from('expense_categories')
-                .insert([{
-                    name: name,
-                    icon: icon,
-                    color: color,
-                    created_at: new Date().toISOString()
-                }]);
-
-            if (error) throw error;
+            // Save to Supabase via ExpenseManager
+            await this.expenseManager.addCategory({
+                name: name,
+                icon: icon,
+                color: color
+            });
 
             this.showToast('Category added successfully!', 'success');
             this.closeAddCategoryModal();
@@ -1941,7 +1938,7 @@ class ExpenseManager {
         try {
             if (!this.supabaseClient) {
                 this.categories = [...this.defaultCategories];
-                return;
+                return this.categories;
             }
 
             const { data: categories, error } = await this.supabaseClient
@@ -1952,7 +1949,7 @@ class ExpenseManager {
             if (error) {
                 console.warn('Error loading categories from Supabase:', error);
                 this.categories = [...this.defaultCategories];
-                return;
+                return this.categories;
             }
 
             if (categories && categories.length > 0) {
@@ -1967,9 +1964,12 @@ class ExpenseManager {
                 this.categories = [...this.defaultCategories];
                 await this.saveDefaultCategoriesToSupabase();
             }
+            
+            return this.categories;
         } catch (error) {
             console.error('Error loading categories:', error);
             this.categories = [...this.defaultCategories];
+            return this.categories;
         }
     }
 
@@ -2530,19 +2530,39 @@ if (!checkAuth()) {
 const SUPABASE_URL = 'https://kgdewraoanlaqewpbdlo.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtnZGV3cmFvYW5sYXFld3BiZGxvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM3MTg3NDksImV4cCI6MjA2OTI5NDc0OX0.wBgDDHcdK0Q9mN6uEPQFEO8gXiJdnrntLJW3dUdh89M';
 
-// Initialize Supabase client
+// Initialize Supabase client with better error handling
 let supabaseClient;
-try {
-    if (window.supabase && window.supabase.createClient) {
-        supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-    } else {
+
+function initializeSupabase() {
+    try {
+        // Check multiple ways Supabase might be available
+        if (typeof window !== 'undefined') {
+            if (window.supabase && typeof window.supabase.createClient === 'function') {
+                supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                console.log('Supabase client initialized successfully');
+                return true;
+            } else if (window.createClient) {
+                // Alternative access pattern for some versions
+                supabaseClient = window.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                console.log('Supabase client initialized via alternative method');
+                return true;
+            } else {
+                console.warn('Supabase library not found. Available window properties:', Object.keys(window).filter(key => key.toLowerCase().includes('supabase')));
+            }
+        }
+        
         console.warn('Supabase not available, using offline mode');
         supabaseClient = null;
+        return false;
+    } catch (error) {
+        console.error('Error initializing Supabase:', error);
+        supabaseClient = null;
+        return false;
     }
-} catch (error) {
-    console.error('Error initializing Supabase:', error);
-    supabaseClient = null;
 }
+
+// Try to initialize immediately
+initializeSupabase();
 
 // Make supabaseClient available globally
 window.supabaseClient = supabaseClient;
@@ -4311,6 +4331,12 @@ function setupNavigation() {
 
 // Helper function to initialize expense module on demand
 async function initializeExpenseModule() {
+    // Try to initialize Supabase again if it failed initially
+    if (!window.supabaseClient && !supabaseClient) {
+        console.log('Retrying Supabase initialization...');
+        initializeSupabase();
+    }
+    
     // Handle null supabaseClient gracefully for local development
     if (!window.supabaseClient) {
         console.warn('Supabase client not available, initializing in offline mode');
