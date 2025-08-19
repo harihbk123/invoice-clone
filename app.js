@@ -57,14 +57,21 @@ function renderClientsGrid() {
                         </div>
                     </div>
                     <div class="client-actions-modern">
-                        <button class="action-btn-modern edit" data-client-id="${client.id}" title="Edit client">
-                            ✏️
+                        <button class="action-btn-modern edit-btn" data-client-id="${client.id}" title="Edit client">
+                            <svg width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708L9.708 9.708a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168l6-6zM11.207 2.5 13.5 4.793 14.793 3.5 12.5 1.207 11.207 2.5zm1.586 3L10.5 3.207 4 9.707V10h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.293l6.5-6.5zm-9.761 5.175-.106.106-1.528 3.821 3.821-1.528.106-.106A.5.5 0 0 1 5 12.5V12h-.5a.5.5 0 0 1-.5-.5V11h-.5a.5.5 0 0 1-.468-.325z"/>
+                            </svg>
                         </button>
-                        <button class="action-btn-modern delete" data-client-id="${client.id}" data-client-name="${escapeHtml(client.name)}" title="Delete client">
-                            🗑️
+                        <button class="action-btn-modern delete-btn" data-client-id="${client.id}" data-client-name="${escapeHtml(client.name)}" title="Delete client">
+                            <svg width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5Zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5Zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6Z"/>
+                                <path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1ZM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118ZM2.5 3h11V2h-11v1Z"/>
+                            </svg>
                         </button>
-                        <button class="action-btn-modern more" title="More options">
-                            ⋯
+                        <button class="action-btn-modern more-btn" title="More options">
+                            <svg width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M3 9.5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm5 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm5 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3z"/>
+                            </svg>
                         </button>
                     </div>
                 </div>
@@ -200,6 +207,13 @@ class ExpenseUI {
             paymentMethod: 'all',
             businessOnly: false
         };
+        // Pagination properties
+        this.pagination = {
+            currentPage: 1,
+            pageSize: 10,
+            totalPages: 1,
+            totalItems: 0
+        };
     }
 
     getExpensesPageHTML() {
@@ -318,13 +332,7 @@ class ExpenseUI {
             </div>
 
             <!-- Enhanced Table Container -->
-            <div class="enhanced-table-container">
-                <div class="table-header">
-                    <div class="table-title-section">
-                        <h3 class="table-title">Expense Records</h3>
-                        <span class="table-subtitle" id="results-count">18 expenses found</span>
-                    </div>
-                    
+            <div class="enhanced-table-container">                    
                     <!-- Revamped Filters UI -->
                     <div class="filters-card" id="expenses-filters">
                         <div class="filters-row">
@@ -408,51 +416,103 @@ class ExpenseUI {
                     </div>
                 </div>
 
-                <!-- Enhanced Table -->
-                <div class="enhanced-table-wrapper">
-                    <table class="enhanced-table">
-                        <thead>
-                            <tr>
-                                <th class="checkbox-column">
-                                    <input type="checkbox" id="select-all-expenses" class="table-checkbox">
-                                </th>
-                                <th class="sortable" data-sort="date">
-                                    <span>Date</span>
-                                    <svg class="sort-icon" width="12" height="12" fill="currentColor" viewBox="0 0 16 16">
-                                        <path d="M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z"/>
-                                    </svg>
-                                </th>
-                                <th class="sortable" data-sort="description">
-                                    <span>Description</span>
-                                    <svg class="sort-icon" width="12" height="12" fill="currentColor" viewBox="0 0 16 16">
-                                        <path d="M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z"/>
-                                    </svg>
-                                </th>
-                                <th class="sortable" data-sort="categoryName">
-                                    <span>Category</span>
-                                    <svg class="sort-icon" width="12" height="12" fill="currentColor" viewBox="0 0 16 16">
-                                        <path d="M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z"/>
-                                    </svg>
-                                </th>
-                                <th class="sortable" data-sort="amount">
-                                    <span>Amount</span>
-                                    <svg class="sort-icon" width="12" height="12" fill="currentColor" viewBox="0 0 16 16">
-                                        <path d="M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z"/>
-                                    </svg>
-                                </th>
-                                <th class="sortable" data-sort="paymentMethod">
-                                    <span>Payment Method</span>
-                                    <svg class="sort-icon" width="12" height="12" fill="currentColor" viewBox="0 0 16 16">
-                                        <path d="M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z"/>
-                                    </svg>
-                                </th>
-                                <th class="actions-column">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="expenses-table-body">
-                            <!-- Expense rows will be populated here -->
-                        </tbody>
-                    </table>
+                <!-- Modern Enhanced Table with Pagination -->
+                <div class="modern-table-container">
+                    <div class="table-controls-top">
+                        <div class="table-info">
+                            <span class="table-title">Expense Records</span>
+                            <span class="table-subtitle" id="results-count">18 expenses found</span>
+                        </div>
+                        <div class="table-actions">
+                            <select id="table-page-size" class="page-size-selector">
+                                <option value="10">10 per page</option>
+                                <option value="25">25 per page</option>
+                                <option value="50">50 per page</option>
+                                <option value="100">100 per page</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="scrollable-table-wrapper">
+                        <table class="modern-expenses-table">
+                            <thead class="sticky-header">
+                                <tr>
+                                    <th class="checkbox-column">
+                                        <input type="checkbox" id="select-all-expenses" class="modern-checkbox">
+                                    </th>
+                                    <th class="sortable date-column" data-sort="date">
+                                        <div class="sort-header">
+                                            <span>Date</span>
+                                            <svg class="sort-icon" width="12" height="12" fill="currentColor" viewBox="0 0 16 16">
+                                                <path d="M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z"/>
+                                            </svg>
+                                        </div>
+                                    </th>
+                                    <th class="sortable description-column" data-sort="description">
+                                        <div class="sort-header">
+                                            <span>Description</span>
+                                            <svg class="sort-icon" width="12" height="12" fill="currentColor" viewBox="0 0 16 16">
+                                                <path d="M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z"/>
+                                            </svg>
+                                        </div>
+                                    </th>
+                                    <th class="sortable category-column" data-sort="categoryName">
+                                        <div class="sort-header">
+                                            <span>Category</span>
+                                            <svg class="sort-icon" width="12" height="12" fill="currentColor" viewBox="0 0 16 16">
+                                                <path d="M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z"/>
+                                            </svg>
+                                        </div>
+                                    </th>
+                                    <th class="sortable amount-column" data-sort="amount">
+                                        <div class="sort-header">
+                                            <span>Amount</span>
+                                            <svg class="sort-icon" width="12" height="12" fill="currentColor" viewBox="0 0 16 16">
+                                                <path d="M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z"/>
+                                            </svg>
+                                        </div>
+                                    </th>
+                                    <th class="sortable payment-column" data-sort="paymentMethod">
+                                        <div class="sort-header">
+                                            <span>Payment Method</span>
+                                            <svg class="sort-icon" width="12" height="12" fill="currentColor" viewBox="0 0 16 16">
+                                                <path d="M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z"/>
+                                            </svg>
+                                        </div>
+                                    </th>
+                                    <th class="actions-column">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="expenses-table-body">
+                                <!-- Expense rows will be populated here -->
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="table-pagination">
+                        <div class="pagination-info">
+                            <span id="pagination-info-text">Showing 1-10 of 18 expenses</span>
+                        </div>
+                        <div class="pagination-controls">
+                            <button id="prev-page" class="pagination-btn" disabled>
+                                <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                    <path fill-rule="evenodd" d="M11.354 1.646a.5.5 0 0 1 0 .708L5.707 8l5.647 5.646a.5.5 0 0 1-.708.708l-6-6a.5.5 0 0 1 0-.708l6-6a.5.5 0 0 1 .708 0z"/>
+                                </svg>
+                                Previous
+                            </button>
+                            <div id="page-numbers" class="page-numbers">
+                                <button class="page-number active">1</button>
+                                <button class="page-number">2</button>
+                                <button class="page-number">3</button>
+                            </div>
+                            <button id="next-page" class="pagination-btn">
+                                Next
+                                <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                    <path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -975,7 +1035,7 @@ class ExpenseUI {
             return 0;
         });
 
-        this.renderExpenseTable(filteredExpenses);
+        this.renderExpensesTable(filteredExpenses);
         this.updateResultsCount(filteredExpenses.length);
     }
 
@@ -1016,11 +1076,6 @@ class ExpenseUI {
         }
     }
 
-    renderExpenseTable(expenses) {
-        // This method calls the existing renderExpensesTable
-        this.renderExpensesTable(expenses);
-    }
-
     duplicateExpense(expenseId) {
         const expense = this.expenseManager.expenses.find(e => e.id === expenseId);
         if (!expense) {
@@ -1028,22 +1083,21 @@ class ExpenseUI {
             return;
         }
         
-        // Clear editing state and populate form with expense data
-        this.expenseManager.editingExpenseId = null;
-        document.getElementById('expense-modal-title').textContent = 'Duplicate Expense';
+        // Open add expense modal with pre-filled data
+        this.openExpenseModal();
         
-        // Populate form with copied data
-        document.getElementById('expense-date').value = new Date().toISOString().split('T')[0]; // Today's date
-        document.getElementById('expense-amount').value = expense.amount;
-        document.getElementById('expense-description').value = expense.description + ' (Copy)';
-        document.getElementById('expense-category').value = expense.categoryName || '';
-        document.getElementById('expense-payment-method').value = expense.paymentMethod || '';
-        document.getElementById('expense-vendor').value = expense.vendorName || '';
-        document.getElementById('expense-notes').value = expense.notes || '';
-        document.getElementById('expense-business').checked = expense.isBusinessExpense;
-        document.getElementById('expense-tax-deductible').checked = expense.taxDeductible;
-        
-        document.getElementById('expense-modal').classList.remove('hidden');
+        // Pre-fill form with expense data (excluding ID and date)
+        setTimeout(() => {
+            document.getElementById('expense-date').value = new Date().toISOString().split('T')[0];
+            document.getElementById('expense-amount').value = expense.amount;
+            document.getElementById('expense-description').value = expense.description + ' (Copy)';
+            document.getElementById('expense-category').value = expense.categoryName || '';
+            document.getElementById('expense-payment-method').value = expense.paymentMethod || '';
+            document.getElementById('expense-vendor').value = expense.vendorName || '';
+            document.getElementById('expense-notes').value = expense.notes || '';
+            document.getElementById('expense-business').checked = expense.isBusinessExpense || false;
+            document.getElementById('expense-tax-deductible').checked = expense.taxDeductible || false;
+        }, 100);
     }
 
     attachModalEventListeners() {
@@ -1222,54 +1276,99 @@ class ExpenseUI {
         const tbody = document.getElementById('expenses-table-body');
         if (!tbody) return;
         
+        // Update pagination info
+        this.pagination.totalItems = expenses.length;
+        this.pagination.totalPages = Math.ceil(expenses.length / this.pagination.pageSize);
+        
+        // Update results count
+        const resultsCount = document.getElementById('results-count');
+        if (resultsCount) {
+            resultsCount.textContent = `${expenses.length} expenses found`;
+        }
+        
         if (expenses.length === 0) {
             tbody.innerHTML = `
                 <tr>
                     <td colspan="8" class="table-empty-state">
-                        <div class="empty-state-icon">📊</div>
-                        <div class="empty-state-title">No expenses found</div>
-                        <div class="empty-state-subtitle">Start tracking your expenses by adding your first entry</div>
-                        <button class="empty-state-action" onclick="document.getElementById('add-expense-btn').click()">
-                            ➕ Add First Expense
-                        </button>
+                        <div class="empty-state-content">
+                            <div class="empty-state-icon">�</div>
+                            <div class="empty-state-title">No expenses found</div>
+                            <div class="empty-state-subtitle">Start tracking your expenses by adding your first entry</div>
+                            <button class="empty-state-action btn-modern btn-primary" onclick="document.getElementById('add-expense-btn').click()">
+                                ➕ Add First Expense
+                            </button>
+                        </div>
                     </td>
                 </tr>
             `;
+            this.updatePagination();
             return;
         }
         
-        tbody.innerHTML = expenses.map((expense, index) => `
-            <tr style="animation: fadeInUp 0.3s ease ${index * 0.05}s both;">
-                <td class="checkbox-column">
-                    <input type="checkbox" class="table-checkbox" data-expense-id="${expense.id}">
+        // Calculate pagination
+        const startIndex = (this.pagination.currentPage - 1) * this.pagination.pageSize;
+        const endIndex = startIndex + this.pagination.pageSize;
+        const paginatedExpenses = expenses.slice(startIndex, endIndex);
+        
+        tbody.innerHTML = paginatedExpenses.map((expense, index) => `
+            <tr class="modern-table-row" style="animation: fadeInUp 0.3s ease ${index * 0.05}s both;">
+                <td class="checkbox-cell">
+                    <input type="checkbox" class="modern-checkbox" data-expense-id="${expense.id}">
                 </td>
-                <td class="date-cell">${this.formatDate(expense.date)}</td>
-                <td class="description-cell" title="${expense.description}">
-                    <div style="font-weight: 500; line-height: 1.4;">${expense.description}</div>
-                    ${expense.notes ? `<div style="font-size: 12px; color: var(--text-muted); margin-top: 2px; line-height: 1.3;">${expense.notes}</div>` : ''}
+                <td class="date-cell">
+                    <div class="cell-content">
+                        <span class="date-primary">${this.formatDate(expense.date)}</span>
+                        <span class="date-secondary">${this.getRelativeTime(expense.date)}</span>
+                    </div>
                 </td>
-                <td>
-                    ${this.getCategoryTag(expense.categoryName)}
+                <td class="description-cell">
+                    <div class="description-content">
+                        <div class="description-primary" title="${expense.description}">${expense.description}</div>
+                        ${expense.notes ? `<div class="description-secondary" title="${expense.notes}">${expense.notes}</div>` : ''}
+                        ${expense.vendorName ? `<div class="vendor-tag">📍 ${expense.vendorName}</div>` : ''}
+                    </div>
+                </td>
+                <td class="category-cell">
+                    ${this.getModernCategoryTag(expense.categoryName)}
                 </td>
                 <td class="amount-cell">
-                    <span style="font-size: 16px; font-weight: 700; color: var(--success);">₹${this.formatNumber(expense.amount)}</span>
+                    <div class="amount-content">
+                        <span class="amount-primary">₹${this.formatNumber(expense.amount)}</span>
+                        ${expense.isBusinessExpense ? '<span class="business-badge">Business</span>' : ''}
+                        ${expense.taxDeductible ? '<span class="tax-badge">Tax Deductible</span>' : ''}
+                    </div>
                 </td>
-                <td>
-                    ${this.getPaymentMethodTag(expense.paymentMethod)}
+                <td class="payment-cell">
+                    ${this.getModernPaymentMethodTag(expense.paymentMethod)}
                 </td>
-                <td class="actions-column">
-                    <button class="action-btn edit" data-expense-id="${expense.id}" title="Edit Expense">
-                        ✏️
-                    </button>
-                    <button class="action-btn" data-expense-id="${expense.id}" title="Duplicate">
-                        📋
-                    </button>
-                    <button class="action-btn delete" data-expense-id="${expense.id}" title="Delete">
-                        🗑️
-                    </button>
+                <td class="actions-cell">
+                    <div class="action-buttons">
+                        <button class="action-btn-modern edit-btn" data-expense-id="${expense.id}" title="Edit Expense">
+                            <svg width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708L9.708 9.708a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168l6-6zM11.207 2.5 13.5 4.793 14.793 3.5 12.5 1.207 11.207 2.5zm1.586 3L10.5 3.207 4 9.707V10h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.293l6.5-6.5zm-9.761 5.175-.106.106-1.528 3.821 3.821-1.528.106-.106A.5.5 0 0 1 5 12.5V12h-.5a.5.5 0 0 1-.5-.5V11h-.5a.5.5 0 0 1-.468-.325z"/>
+                            </svg>
+                        </button>
+                        <button class="action-btn-modern duplicate-btn" data-expense-id="${expense.id}" title="Duplicate Expense">
+                            <svg width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M4 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V2Zm2-1a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H6ZM2 5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1v-1h1v1a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h1v1H2Z"/>
+                            </svg>
+                        </button>
+                        <button class="action-btn-modern delete-btn" data-expense-id="${expense.id}" title="Delete Expense">
+                            <svg width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5Zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5Zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6Z"/>
+                                <path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1ZM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118ZM2.5 3h11V2h-11v1Z"/>
+                            </svg>
+                        </button>
+                    </div>
                 </td>
             </tr>
         `).join('');
+        
+        // Update pagination controls
+        this.updatePagination();
+        
+        // Set up event listeners for new rows
+        this.setupTableEventListeners();
     }
 
     getCategoryTag(categoryName) {
@@ -1919,6 +2018,206 @@ class ExpenseUI {
             'wallet': '📲 Wallet'
         };
         return methods[method] || method || '-';
+    }
+
+    getModernCategoryTag(categoryName) {
+        const category = (categoryName || 'Miscellaneous').toLowerCase();
+        
+        const categoryMapping = {
+            'rent': { class: 'rent', icon: '🏠', color: '#8B5CF6' },
+            'utilities': { class: 'utilities', icon: '⚡', color: '#06B6D4' },
+            'transportation': { class: 'transportation', icon: '🚗', color: '#F59E0B' },
+            'food': { class: 'food', icon: '🍕', color: '#EF4444' },
+            'office': { class: 'office', icon: '🏢', color: '#10B981' },
+            'marketing': { class: 'marketing', icon: '📢', color: '#EC4899' },
+            'travel': { class: 'travel', icon: '✈️', color: '#3B82F6' },
+            'entertainment': { class: 'entertainment', icon: '🎭', color: '#F97316' },
+            'software': { class: 'software', icon: '💻', color: '#8B5CF6' },
+            'health': { class: 'health', icon: '🏥', color: '#10B981' },
+            'education': { class: 'education', icon: '📚', color: '#A29BFE' },
+            'miscellaneous': { class: 'miscellaneous', icon: '📦', color: '#6B7280' },
+            'internet & phone': { class: 'utilities', icon: '📞', color: '#06B6D4' },
+            'fashion': { class: 'entertainment', icon: '👗', color: '#F97316' },
+            'professional services': { class: 'office', icon: '💼', color: '#10B981' },
+            'grocery': { class: 'food', icon: '🛒', color: '#EF4444' },
+        };
+        
+        const categoryInfo = categoryMapping[category] || categoryMapping['miscellaneous'];
+        
+        return `
+            <div class="modern-category-tag ${categoryInfo.class}" style="--category-color: ${categoryInfo.color}">
+                <span class="category-icon">${categoryInfo.icon}</span>
+                <span class="category-text">${categoryName || 'Miscellaneous'}</span>
+            </div>
+        `;
+    }
+
+    getModernPaymentMethodTag(method) {
+        const methodData = {
+            'cash': { icon: '💵', label: 'Cash', class: 'cash', color: '#10B981' },
+            'upi': { icon: '📱', label: 'UPI', class: 'upi', color: '#3B82F6' },
+            'card': { icon: '💳', label: 'Card', class: 'card', color: '#EC4899' },
+            'net_banking': { icon: '🏦', label: 'Net Banking', class: 'net-banking', color: '#F59E0B' },
+            'wallet': { icon: '📲', label: 'Wallet', class: 'wallet', color: '#8B5CF6' }
+        };
+        
+        const data = methodData[method] || { icon: '💳', label: method || 'Unknown', class: 'unknown', color: '#6B7280' };
+        
+        return `
+            <div class="modern-payment-tag ${data.class}" style="--payment-color: ${data.color}">
+                <span class="payment-icon">${data.icon}</span>
+                <span class="payment-text">${data.label}</span>
+            </div>
+        `;
+    }
+
+    getRelativeTime(dateString) {
+        if (!dateString) return '';
+        
+        const now = new Date();
+        const date = new Date(dateString);
+        const diffInHours = Math.abs(now - date) / (1000 * 60 * 60);
+        
+        if (diffInHours < 24) {
+            return 'Today';
+        } else if (diffInHours < 48) {
+            return 'Yesterday';
+        } else if (diffInHours < 168) { // 7 days
+            return `${Math.floor(diffInHours / 24)} days ago`;
+        } else {
+            return '';
+        }
+    }
+
+    updatePagination() {
+        // Update pagination info
+        const paginationInfo = document.getElementById('pagination-info-text');
+        if (paginationInfo) {
+            const start = (this.pagination.currentPage - 1) * this.pagination.pageSize + 1;
+            const end = Math.min(this.pagination.currentPage * this.pagination.pageSize, this.pagination.totalItems);
+            paginationInfo.textContent = `Showing ${start}-${end} of ${this.pagination.totalItems} expenses`;
+        }
+        
+        // Update page buttons
+        const prevBtn = document.getElementById('prev-page');
+        const nextBtn = document.getElementById('next-page');
+        
+        if (prevBtn) prevBtn.disabled = this.pagination.currentPage <= 1;
+        if (nextBtn) nextBtn.disabled = this.pagination.currentPage >= this.pagination.totalPages;
+        
+        // Update page numbers
+        this.renderPageNumbers();
+    }
+
+    renderPageNumbers() {
+        const pageNumbersContainer = document.getElementById('page-numbers');
+        if (!pageNumbersContainer) return;
+        
+        const { currentPage, totalPages } = this.pagination;
+        let startPage = Math.max(1, currentPage - 2);
+        let endPage = Math.min(totalPages, startPage + 4);
+        
+        if (endPage - startPage < 4) {
+            startPage = Math.max(1, endPage - 4);
+        }
+        
+        let html = '';
+        
+        for (let i = startPage; i <= endPage; i++) {
+            html += `
+                <button class="page-number ${i === currentPage ? 'active' : ''}" data-page="${i}">
+                    ${i}
+                </button>
+            `;
+        }
+        
+        pageNumbersContainer.innerHTML = html;
+    }
+
+    setupTableEventListeners() {
+        // Edit buttons
+        document.querySelectorAll('.edit-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const expenseId = e.currentTarget.dataset.expenseId;
+                this.editExpense(expenseId);
+            });
+        });
+        
+        // Delete buttons
+        document.querySelectorAll('.delete-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const expenseId = e.currentTarget.dataset.expenseId;
+                this.deleteExpense(expenseId);
+            });
+        });
+        
+        // Duplicate buttons
+        document.querySelectorAll('.duplicate-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const expenseId = e.currentTarget.dataset.expenseId;
+                this.duplicateExpense(expenseId);
+            });
+        });
+        
+        // Page number buttons
+        document.querySelectorAll('.page-number').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const page = parseInt(e.currentTarget.dataset.page);
+                this.goToPage(page);
+            });
+        });
+        
+        // Pagination buttons
+        const prevBtn = document.getElementById('prev-page');
+        const nextBtn = document.getElementById('next-page');
+        
+        if (prevBtn) {
+            prevBtn.addEventListener('click', () => this.goToPage(this.pagination.currentPage - 1));
+        }
+        
+        if (nextBtn) {
+            nextBtn.addEventListener('click', () => this.goToPage(this.pagination.currentPage + 1));
+        }
+        
+        // Page size selector
+        const pageSizeSelector = document.getElementById('table-page-size');
+        if (pageSizeSelector) {
+            pageSizeSelector.addEventListener('change', (e) => {
+                this.pagination.pageSize = parseInt(e.target.value);
+                this.pagination.currentPage = 1;
+                this.renderExpenses();
+            });
+        }
+    }
+
+    goToPage(page) {
+        if (page < 1 || page > this.pagination.totalPages) return;
+        this.pagination.currentPage = page;
+        this.renderExpenses();
+    }
+
+    duplicateExpense(expenseId) {
+        const expense = this.expenseManager.expenses.find(e => e.id === expenseId);
+        if (!expense) {
+            this.showToast('Expense not found', 'error');
+            return;
+        }
+        
+        // Open add expense modal with pre-filled data
+        this.openExpenseModal();
+        
+        // Pre-fill form with expense data (excluding ID and date)
+        setTimeout(() => {
+            document.getElementById('expense-date').value = new Date().toISOString().split('T')[0];
+            document.getElementById('expense-amount').value = expense.amount;
+            document.getElementById('expense-description').value = expense.description + ' (Copy)';
+            document.getElementById('expense-category').value = expense.categoryName || '';
+            document.getElementById('expense-payment-method').value = expense.paymentMethod || '';
+            document.getElementById('expense-vendor').value = expense.vendorName || '';
+            document.getElementById('expense-notes').value = expense.notes || '';
+            document.getElementById('expense-business').checked = expense.isBusinessExpense || false;
+            document.getElementById('expense-tax-deductible').checked = expense.taxDeductible || false;
+        }, 100);
     }
 
     cleanupExpensesPage() {
@@ -4828,18 +5127,31 @@ function renderRecentInvoices() {
                 </td>
                 <td>
                     <div class="action-buttons compact">
-                        <button class="action-btn view" onclick="viewInvoice('${invoice.id}')" title="View Invoice">
-                            👁️
+                        <button class="action-btn-modern view-btn" onclick="viewInvoice('${invoice.id}')" title="View Invoice">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                                <circle cx="12" cy="12" r="3"/>
+                            </svg>
                         </button>
-                        <button class="action-btn edit" onclick="editInvoice('${invoice.id}')" title="Edit Invoice">
-                            ✏️
+                        <button class="action-btn-modern edit-btn" onclick="editInvoice('${invoice.id}')" title="Edit Invoice">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                                <path d="m18.5 2.5 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                            </svg>
                         </button>
-                        <button class="action-btn download" onclick="downloadInvoice('${invoice.id}')" title="Download PDF">
-                            📄
+                        <button class="action-btn-modern download-btn" onclick="downloadInvoice('${invoice.id}')" title="Download PDF">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                <polyline points="7,10 12,15 17,10"/>
+                                <line x1="12" y1="15" x2="12" y2="3"/>
+                            </svg>
                         </button>
                         ${invoice.status === 'Pending' ? `
-                            <button class="action-btn success" onclick="changeInvoiceStatus('${invoice.id}', 'Paid')" title="Mark as Paid">
-                                💰
+                            <button class="action-btn-modern success-btn" onclick="changeInvoiceStatus('${invoice.id}', 'Paid')" title="Mark as Paid">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="12" y1="1" x2="12" y2="23"/>
+                                    <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+                                </svg>
                             </button>
                         ` : ''}
                     </div>
@@ -5746,17 +6058,31 @@ function renderInvoices() {
             <td><span class="status-badge ${invoice.status.toLowerCase()}">${invoice.status}</span></td>
             <td>
                 <div class="action-buttons">
-                    <button class="action-btn view" onclick="viewInvoice('${invoice.id}')" title="View Invoice">
-                        👁️
+                    <button class="action-btn-modern view-btn" onclick="viewInvoice('${invoice.id}')" title="View Invoice">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                            <circle cx="12" cy="12" r="3"/>
+                        </svg>
                     </button>
-                    <button class="action-btn edit" onclick="editInvoice('${invoice.id}')" title="Edit Invoice">
-                        ✏️
+                    <button class="action-btn-modern edit-btn" onclick="editInvoice('${invoice.id}')" title="Edit Invoice">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                            <path d="m18.5 2.5 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                        </svg>
                     </button>
-                    <button class="action-btn download" onclick="downloadInvoice('${invoice.id}')" title="Download PDF">
-                        📄
+                    <button class="action-btn-modern download-btn" onclick="downloadInvoice('${invoice.id}')" title="Download PDF">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                            <polyline points="7,10 12,15 17,10"/>
+                            <line x1="12" y1="15" x2="12" y2="3"/>
+                        </svg>
                     </button>
-                    <button class="action-btn delete" onclick="deleteInvoice('${invoice.id}')" title="Delete Invoice">
-                        🗑️
+                    <button class="action-btn-modern delete-btn" onclick="deleteInvoice('${invoice.id}')" title="Delete Invoice">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="3,6 5,6 21,6"/>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/>
+                            <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                        </svg>
                     </button>
                 </div>
             </td>
@@ -5953,17 +6279,31 @@ function renderInvoicesTable(invoices = appData.invoices) {
                 </td>
                 <td class="actions-cell">
                     <div class="action-buttons">
-                        <button class="action-btn view" onclick="viewInvoice('${invoice.id}')" title="View Invoice">
-                            👁️
+                        <button class="action-btn-modern view-btn" onclick="viewInvoice('${invoice.id}')" title="View Invoice">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                                <circle cx="12" cy="12" r="3"/>
+                            </svg>
                         </button>
-                        <button class="action-btn download" onclick="downloadInvoice('${invoice.id}')" title="Download Invoice">
-                            📄
+                        <button class="action-btn-modern download-btn" onclick="downloadInvoice('${invoice.id}')" title="Download Invoice">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                <polyline points="7,10 12,15 17,10"/>
+                                <line x1="12" y1="15" x2="12" y2="3"/>
+                            </svg>
                         </button>
-                        <button class="action-btn edit" onclick="editInvoice('${invoice.id}')" title="Edit Invoice">
-                            ✏️
+                        <button class="action-btn-modern edit-btn" onclick="editInvoice('${invoice.id}')" title="Edit Invoice">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                                <path d="m18.5 2.5 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                            </svg>
                         </button>
-                        <button class="action-btn delete" onclick="deleteInvoice('${invoice.id}')" title="Delete Invoice">
-                            🗑️
+                        <button class="action-btn-modern delete-btn" onclick="deleteInvoice('${invoice.id}')" title="Delete Invoice">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="3,6 5,6 21,6"/>
+                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/>
+                                <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                            </svg>
                         </button>
                     </div>
                 </td>
@@ -7295,6 +7635,7 @@ function getAnalyticsPageHTML() {
                             <th>Average Amount</th>
                             <th>Last Invoice</th>
                             <th>Status</th>
+                            <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody id="top-clients-table">
@@ -7799,24 +8140,112 @@ function populateTopClientsTable(invoices, clients) {
         const primaryStatus = Object.entries(stats.statuses)
             .sort(([,a], [,b]) => b - a)[0]?.[0] || 'Unknown';
         
+        const clientName = client?.name || 'Unknown Client';
+        const clientEmail = client?.email || '';
+        const avatar = clientName.charAt(0).toUpperCase();
+        const gradientColors = ['primary', 'success', 'warning', 'info', 'purple', 'pink'];
+        
+        // Simple hash function for consistent colors
+        let hash = 0;
+        for (let i = 0; i < clientId.length; i++) {
+            const char = clientId.charCodeAt(i);
+            hash = ((hash << 5) - hash) + char;
+            hash = hash & hash; // Convert to 32bit integer
+        }
+        const avatarColor = gradientColors[Math.abs(hash) % gradientColors.length];
+        
         return `
             <tr>
                 <td>
-                    <div class="client-info">
-                        <div class="client-name">${client?.name || 'Unknown Client'}</div>
-                        <div class="client-email">${client?.email || ''}</div>
+                    <div class="client-info-analytics">
+                        <div class="client-avatar-analytics gradient-${avatarColor}">
+                            ${avatar}
+                        </div>
+                        <div class="client-details-analytics">
+                            <h4 class="client-name-analytics">${clientName}</h4>
+                            <p class="client-email-analytics">${clientEmail}</p>
+                        </div>
                     </div>
                 </td>
-                <td class="revenue-cell">₹${formatNumber(stats.totalRevenue)}</td>
-                <td>${stats.invoiceCount}</td>
-                <td>₹${formatNumber(avgAmount)}</td>
-                <td>${lastInvoice}</td>
+                <td><span class="revenue-amount">₹${formatNumber(stats.totalRevenue)}</span></td>
+                <td><span class="invoice-count-badge">${stats.invoiceCount}</span></td>
+                <td><span class="average-amount">₹${formatNumber(avgAmount)}</span></td>
+                <td><span class="last-invoice-date">${lastInvoice}</span></td>
                 <td>
                     <span class="status-badge status-${primaryStatus.toLowerCase()}">${primaryStatus}</span>
+                </td>
+                <td>
+                    <div class="actions-analytics">
+                        <button class="action-btn-analytics" title="View Details" onclick="viewClientDetails('${clientId}')">
+                            <svg width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8zM1.173 8a13.133 13.133 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5c2.12 0 3.879 1.168 5.168 2.457A13.133 13.133 0 0 1 14.828 8c-.058.087-.122.183-.195.288-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5c-2.12 0-3.879-1.168-5.168-2.457A13.134 13.134 0 0 1 1.172 8z"/>
+                                <path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zM4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0z"/>
+                            </svg>
+                        </button>
+                        <button class="action-btn-analytics" title="Send Invoice" onclick="createInvoiceForClient('${clientId}')">
+                            <svg width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M.05 3.555A2 2 0 0 1 2 2h12a2 2 0 0 1 1.95 1.555L8 8.414.05 3.555ZM0 4.697v7.104l5.803-3.558L0 4.697ZM6.761 8.83l-6.57 4.027A2 2 0 0 0 2 14h12a2 2 0 0 0 1.808-1.144l-6.57-4.027L8 9.586l-1.239-.757Zm3.436-.586L16 11.801V4.697l-5.803 3.546Z"/>
+                            </svg>
+                        </button>
+                        <button class="action-btn-analytics" title="More Options" onclick="showClientOptions('${clientId}')">
+                            <svg width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M3 9.5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm5 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm5 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3z"/>
+                            </svg>
+                        </button>
+                    </div>
                 </td>
             </tr>
         `;
     }).join('');
+}
+
+// Analytics table action functions
+function createInvoiceForClient(clientId) {
+    // Switch to invoices page and pre-fill client
+    showPage('invoices');
+    setTimeout(() => {
+        const addInvoiceBtn = document.getElementById('add-invoice-btn');
+        if (addInvoiceBtn) {
+            addInvoiceBtn.click();
+            // Pre-select client if possible
+            setTimeout(() => {
+                const clientSelect = document.getElementById('invoice-client');
+                if (clientSelect) {
+                    clientSelect.value = clientId;
+                }
+            }, 100);
+        }
+    }, 100);
+}
+
+function showClientOptions(clientId) {
+    // Show context menu or dropdown with more options
+    const options = [
+        { label: 'View Details', action: () => viewClientDetails(clientId) },
+        { label: 'Create Invoice', action: () => createInvoiceForClient(clientId) },
+        { label: 'View All Invoices', action: () => showClientInvoices(clientId) },
+        { label: 'Edit Client', action: () => editClient(clientId) }
+    ];
+    
+    // For now, just show an alert with options
+    const optionText = options.map(opt => opt.label).join('\n');
+    const choice = prompt(`Choose an option:\n${optionText}\n\nEnter option number (1-${options.length}):`);
+    
+    if (choice && choice >= 1 && choice <= options.length) {
+        options[choice - 1].action();
+    }
+}
+
+function showClientInvoices(clientId) {
+    // Switch to invoices page and filter by client
+    showPage('invoices');
+    // Implementation would filter invoices by client
+}
+
+function editClient(clientId) {
+    // Switch to clients page and open edit modal
+    showPage('clients');
+    // Implementation would open client edit modal
 }
 
 function populateClientFilter() {
