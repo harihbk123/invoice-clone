@@ -188,6 +188,7 @@ class ExpenseUI {
         this.showToast = showToast;
         this.expenseChart = null;
         this.categoryChart = null;
+        this.chartRenderTimeout = null;
         this.currentSort = {
             field: 'date',
             direction: 'desc'
@@ -1337,76 +1338,123 @@ class ExpenseUI {
     }
 
     renderCharts(expenses) {
-        // Destroy existing charts
+        // Clear any existing timeout to prevent multiple rapid renders
+        if (this.chartRenderTimeout) {
+            clearTimeout(this.chartRenderTimeout);
+        }
+        
+        // Destroy existing charts with better cleanup
         if (this.expenseChart) {
-            this.expenseChart.destroy();
+            try {
+                this.expenseChart.destroy();
+            } catch (error) {
+                console.warn('Error destroying expense chart:', error);
+            }
             this.expenseChart = null;
         }
         if (this.categoryChart) {
-            this.categoryChart.destroy();
+            try {
+                this.categoryChart.destroy();
+            } catch (error) {
+                console.warn('Error destroying category chart:', error);
+            }
             this.categoryChart = null;
         }
         
+        // Clear any existing Chart.js instances from canvas elements
+        const monthlyCtx = document.getElementById('expenseMonthlyChart');
+        const categoryCtx = document.getElementById('expenseCategoryChart');
+        
+        // Force cleanup of any existing chart instances on these canvases
+        if (monthlyCtx) {
+            const existingChart = Chart.getChart(monthlyCtx);
+            if (existingChart) {
+                existingChart.destroy();
+            }
+        }
+        
+        if (categoryCtx) {
+            const existingChart = Chart.getChart(categoryCtx);
+            if (existingChart) {
+                existingChart.destroy();
+            }
+        }
+        
+        // Debounced chart creation to prevent rapid re-renders
+        this.chartRenderTimeout = setTimeout(() => {
+            this.createCharts(expenses);
+        }, 100);
+    }
+    
+    createCharts(expenses) {
         // Monthly trend chart
         const monthlyData = this.getMonthlyData(expenses);
         const monthlyCtx = document.getElementById('expenseMonthlyChart');
         if (monthlyCtx && monthlyData.labels.length > 0) {
-            this.expenseChart = new Chart(monthlyCtx, {
-                type: 'line',
-                data: {
-                    labels: monthlyData.labels,
-                    datasets: [{
-                        label: 'Monthly Expenses',
-                        data: monthlyData.values,
-                        borderColor: '#1FB8CD',
-                        backgroundColor: 'rgba(31, 184, 205, 0.1)',
-                        borderWidth: 3,
-                        fill: true,
-                        tension: 0.4
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { display: false }
+            try {
+                this.expenseChart = new Chart(monthlyCtx, {
+                    type: 'line',
+                    data: {
+                        labels: monthlyData.labels,
+                        datasets: [{
+                            label: 'Monthly Expenses',
+                            data: monthlyData.values,
+                            borderColor: '#1FB8CD',
+                            backgroundColor: 'rgba(31, 184, 205, 0.1)',
+                            borderWidth: 3,
+                            fill: true,
+                            tension: 0.4
+                        }]
                     },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            ticks: {
-                                callback: value => '₹' + this.formatNumber(value)
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    callback: value => '₹' + this.formatNumber(value)
+                                }
                             }
                         }
                     }
-                }
-            });
+                });
+            } catch (error) {
+                console.error('Error creating expense chart:', error);
+            }
         }
         
         // Category breakdown chart
         const categoryData = this.getCategoryData(expenses);
         const categoryCtx = document.getElementById('expenseCategoryChart');
         if (categoryCtx && categoryData.labels.length > 0) {
-            this.categoryChart = new Chart(categoryCtx, {
-                type: 'doughnut',
-                data: {
-                    labels: categoryData.labels,
-                    datasets: [{
-                        data: categoryData.values,
-                        backgroundColor: [
-                            '#1FB8CD', '#F59E42', '#6B7280', '#10B981', 
-                            '#F43F5E', '#6366F1', '#FBBF24', '#A3E635'
-                        ]
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { position: 'bottom' }
+            try {
+                this.categoryChart = new Chart(categoryCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: categoryData.labels,
+                        datasets: [{
+                            data: categoryData.values,
+                            backgroundColor: [
+                                '#1FB8CD', '#F59E42', '#6B7280', '#10B981', 
+                                '#F43F5E', '#6366F1', '#FBBF24', '#A3E635'
+                            ]
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { position: 'bottom' }
+                        }
                     }
-                }
-            });
+                });
+            } catch (error) {
+                console.error('Error creating category chart:', error);
+            }
         }
     }
 
@@ -1874,13 +1922,54 @@ class ExpenseUI {
     }
 
     cleanupExpensesPage() {
+        // Clear any pending chart render timeout
+        if (this.chartRenderTimeout) {
+            clearTimeout(this.chartRenderTimeout);
+            this.chartRenderTimeout = null;
+        }
+        
+        // Robust chart cleanup
         if (this.expenseChart) {
-            this.expenseChart.destroy();
+            try {
+                this.expenseChart.destroy();
+            } catch (error) {
+                console.warn('Error destroying expense chart during cleanup:', error);
+            }
             this.expenseChart = null;
         }
         if (this.categoryChart) {
-            this.categoryChart.destroy();
+            try {
+                this.categoryChart.destroy();
+            } catch (error) {
+                console.warn('Error destroying category chart during cleanup:', error);
+            }
             this.categoryChart = null;
+        }
+        
+        // Also cleanup any Chart.js instances that might be lingering
+        const monthlyCtx = document.getElementById('expenseMonthlyChart');
+        const categoryCtx = document.getElementById('expenseCategoryChart');
+        
+        if (monthlyCtx) {
+            const existingChart = Chart.getChart(monthlyCtx);
+            if (existingChart) {
+                try {
+                    existingChart.destroy();
+                } catch (error) {
+                    console.warn('Error destroying lingering monthly chart:', error);
+                }
+            }
+        }
+        
+        if (categoryCtx) {
+            const existingChart = Chart.getChart(categoryCtx);
+            if (existingChart) {
+                try {
+                    existingChart.destroy();
+                } catch (error) {
+                    console.warn('Error destroying lingering category chart:', error);
+                }
+            }
         }
     }
 }
